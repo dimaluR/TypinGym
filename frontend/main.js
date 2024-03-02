@@ -13,54 +13,60 @@ appContainer.innerHTML = `
 
 createText();
 
-document.addEventListener("keydown", (event) => {    
-    if (event.code === "Backspace") {
-        cursor = cursor > 0 ? cursor - 1 : cursor;
-        letterArray[cursor] = 0;
-    } else if (modifierKeys.includes(event.key)) {
+document.addEventListener("keydown", (event) => {
+    let letterPrev;
+    if (cursor !== 0) {
+        letterPrev = document.querySelector(`#letter_${cursor - 1}`);
+        letterPrev.classList.remove("cursor");
+    }
+    const letter = document.querySelector(`#letter_${cursor}`);
+    letter.classList.remove("cursor");
+    if (modifierKeys.includes(event.key)) {
         if (event.key === "Escape") {
             handleCompletion();
         }
         console.log(`modifier key pressed: ${event.key}`);
+    } else if (event.code === "Backspace") {
+        if (cursor !== 0) {
+            letterPrev.classList.add("cursor");
+            letterPrev.classList.remove("correct", "incorrect", "typed");
+        }
+        letter.classList.remove("correct", "incorrect");
+        cursor = cursor === 0 ? cursor : cursor - 1;
     } else {
-        letterArray[cursor] = contentText[cursor] == event.key ? 1 : -1;
+        letter.classList.add("typed");
+        if (contentText[cursor] !== " ") {
+            if (event.key === contentText[cursor]) {
+                letter.classList.add("correct");
+            } else {
+                letter.classList.add("incorrect");
+            }
+        }
         cursor = cursor < contentText.length ? cursor + 1 : cursor;
     }
+
     console.log(`cursor at ${cursor}. key is ${event.key} (${event.code})`);
     if (cursor === contentText.length) {
         handleCompletion();
     }
-    renderText();
+    const letterNext = document.querySelector(`#letter_${cursor}`);
+    letterNext.classList.add("cursor");
 });
 
 function handleCompletion() {
-    alert(
-        `Completed typing sentence. successfully typed ${letterArray.reduce((acc, val) => (acc += val ? val > 0 : 0), 0)}`,
-    );
+    alert(`Completed typing sentence. reseting.`);
     cursor = 0;
-    letterArray = new Array(contentText.length).fill(0);
+    createText();
 }
 function createText() {
     const content = document.querySelector("#content");
+    content.innerHTML = "";
     for (let i = 0; i < contentText.length; i++) {
         const letter = document.createElement("letter");
         letter.id = `letter_${i}`;
         letter.className = "letter";
         letter.textContent = contentText[i];
+        letter.tabIndex = 0;
         content.appendChild(letter);
-    }
-}
-function renderText() {
-    for (let i = 0; i < contentText.length; i++) {
-        const letter = document.querySelector(`#letter_${i}`);
-        letter.className = "letter";
-        if (i === cursor) {
-            letter.classList.add("cursor");
-        }
-        if (letterArray[i] == 1) {
-            letter.classList.add("correct");
-        } else if (letterArray[i] == -1) {
-            letter.classList.add("incorrect");
-        }
     }
 }

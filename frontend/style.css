@@ -1,17 +1,42 @@
+:root {
+    font-family: "JetBrains Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    background-color: #1e1e2e;
+    --main-color: #abe9b3;
+    --sub-color: #575268;
+    --sub-alt-color: #292739;
+    --text-color: #d9e0ee;
+    --error-color: #f28fad;
+    --error-extra-color: #e8a2af;
+    --colorful-error-color: #f28fad;
+    --colorful-error-extra-color: #e8a2af;
+}
+
 .letter {
-  font-family: "JetBrains Mono", monospace;
-  font-optical-sizing: auto;
-  font-weight: 400;
-  font-style: normal;
+    color: var(--sub-color);
+}
+
+.letter.cursor {
+    caret-color: #fae3b0;
+
+}
+
+.typed {
+    background-color: var(--sub-alt-color);
 }
 
 .correct {
-    color: green;
+    color: var(--text-color);
+    display: inline-block;
+    animation: drop 0.1s 1;
 }
 
-
 .incorrect {
-    color: red;
+    color: var(--error-color);
+    display: inline-block;
+    animation: wiggle 0.1s 3;
 }
 
 .cursor {
@@ -19,14 +44,31 @@
 }
 
 @keyframes wiggle {
-    0% { transform: rotate(0deg); }
-   80% { transform: rotate(0deg); }
-   85% { transform: rotate(5deg); }
-   95% { transform: rotate(-5deg); }
-  100% { transform: rotate(0deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    50% {
+        transform: rotate(-7deg);
+    }
+    95% {
+        transform: rotate(7deg);
+    }
+    100% {
+        transform: rotate(0deg);
+    }
 }
 
-.wiggle {
-    display:inline-block;
-    animation: wiggle 2.5s infinite;
+@keyframes drop {
+    0% {
+        transform: translateY(0rem);
+    }
+    30% {
+        transform: translateY(0.05rem);
+    }
+    50% {
+        transform: translateY(0rem);
+    }
+    100% {
+        transform: translateY(0rem);
+    }
 }
