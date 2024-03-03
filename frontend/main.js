@@ -1,12 +1,13 @@
+import { get_more_words } from "./backend_api_mock";
+
 let cursor = 0;
-const contentText = `The conditional statements for updating the cursor position seem incorrect.`;
-let letterArray = [].fill(0);
+let contentText;
 const appContainer = document.querySelector("#app");
 const modifierKeys = ["Control", "Alt", "Shift", "Meta", "Tab", "Escape"];
 appContainer.innerHTML = `
   <div>
       <div id="contentHolder">
-          <p id="content"></p>
+          <line id="content" class=line>some</line>
       </div>
   </div>
 `;
@@ -22,9 +23,9 @@ document.addEventListener("keydown", (event) => {
     const letter = document.querySelector(`#letter_${cursor}`);
     letter.classList.remove("cursor");
     if (modifierKeys.includes(event.key)) {
-        if (event.key === "Escape") {
-            handleCompletion();
-        }
+        // if (event.key === "Escape") {
+        //     handleLineCompletion();
+        // }
         console.log(`modifier key pressed: ${event.key}`);
     } else if (event.code === "Backspace") {
         if (cursor !== 0) {
@@ -47,18 +48,18 @@ document.addEventListener("keydown", (event) => {
 
     console.log(`cursor at ${cursor}. key is ${event.key} (${event.code})`);
     if (cursor === contentText.length) {
-        handleCompletion();
+        handleLineCompletion();
     }
     const letterNext = document.querySelector(`#letter_${cursor}`);
     letterNext.classList.add("cursor");
 });
 
-function handleCompletion() {
-    alert(`Completed typing sentence. reseting.`);
+function handleLineCompletion() {
     cursor = 0;
     createText();
 }
 function createText() {
+    contentText = get_more_words()
     const content = document.querySelector("#content");
     content.innerHTML = "";
     for (let i = 0; i < contentText.length; i++) {

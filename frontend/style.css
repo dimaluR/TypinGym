@@ -14,13 +14,17 @@
     --colorful-error-extra-color: #e8a2af;
 }
 
+.line {
+    overflow: auto;
+    margin: 0.1rem
+}
+
 .letter {
     color: var(--sub-color);
 }
 
 .letter.cursor {
     caret-color: #fae3b0;
-
 }
 
 .typed {
