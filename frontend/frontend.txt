@@ -16,7 +16,7 @@ file: index.html<!doctype html>
         <div id="app">
             <div id="layout">
                 <div id="menu">menu</div>
-                <div id="content" class="line"></div>
+                <div id="content"></div>
                 <div id="stats"><span>menu\nmenu</span></div>
                 <div id="sp"></div>
                 <div id="spe"></div>
@@ -47,7 +47,7 @@ file: style.css:root {
         "sp menu spe"
         "sp content spe"
         "sp stats spe";
-    grid-template-rows: 1fr 6.6rem  1fr;
+    grid-template-rows: 1fr 4.9rem 1fr;
     grid-template-columns: 1fr 30rem 1fr;
     position: fixed;
     padding: 0;
@@ -66,20 +66,34 @@ file: style.css:root {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-start;
-    column-gap:0.2rem;
-    row-gap:0.2rem;
+    column-gap: 0.2rem;
+    row-gap: 0.2rem;
     align-content: flex-start;
     overflow-y: hidden;
-    height: 6.6rem;
 }
 
 #content > * {
-    flex: 0 0 auto;
+    display: flex;
+    gap: 0.3rem;
+    justify-content: space-between;
 }
 
+.line > * {
+}
+
+.line.active {
+    background-color: red;
+}
+.word.active {
+    font-weight: bold;
+}
 #stats {
     grid-area: stats;
     height: 3rem;
+}
+
+.letter.active {
+    text-decoration: underline;
 }
 
 #menu {
@@ -88,14 +102,12 @@ file: style.css:root {
 }
 
 #sp {
-    grid-area:sp;
+    grid-area: sp;
 }
 
 #spe {
-    grid-area:spe;
+    grid-area: spe;
 }
-
-
 
 .letter {
     color: var(--sub-color);
@@ -115,10 +127,6 @@ file: style.css:root {
     color: var(--error-color);
     display: inline-block;
     animation: wiggle 0.1s 3;
-    text-decoration: underline;
-}
-
-.cursor {
     text-decoration: underline;
 }
 
@@ -157,23 +165,52 @@ const BACKEND_PORT = 5007;
 
 const LINE_WORD_COUND = 10;
 const NEW_WORDS_GEN_LETTER_OFFSET = 30;
+const LINE_LENGTH = 50;
 
-let cursor = 0;
 let l = 0;
 const appContainer = document.querySelector("#app");
 const modifierKeys = ["Control", "Alt", "Shift", "Meta", "Tab", "Escape"];
 const content = document.querySelector("#content");
+let currentLetter;
+let currentWord;
+let currentLine;
 
+createText();
+createText();
 createText();
 
 document.addEventListener("keydown", (event) => {
-    let letterPrev;
-    if (cursor !== 0) {
-        letterPrev = document.querySelector(`#letter_${cursor - 1}`);
-    }
+    if (!currentLetter){
+        currentLine = content.firstElementChild;
+        currentLine.classList.add("active")
 
+        currentWord = currentLine.firstElementChild;
+        currentWord.classList.add("active")
+
+        currentLetter = currentWord.firstElementChild;
+        currentLetter.classList.add("active")
+
+    }
     const letter = document.querySelector(`#letter_${cursor}`);
-    letter.classList.remove("cursor");
+    letter.classList.remove("active");
+    const currentWord = letter.closest(".word");
+    if (letter === currentWord.lastElementChild) {
+        currentWord.classList.remove("active");
+        const nextWord = currentWord.nextElementSibling;
+        if (nextWord) {
+            nextWord.classList.add("active");
+        }
+    }
+    const currentLine = currentWord.closest(".line");
+    if (currentWord === currentLine.lastElementChild && letter === currentWord.lastElementChild) {
+        currentLine.classList.remove("active");
+        const nextLine = currentLine.nextElementSibling;
+        if (nextLine) {
+            nextLine.classList.add("active");
+            createText();
+            scrollContent();
+        }
+    }
 
     if (modifierKeys.includes(event.key)) {
         if (event.key === "Escape") {
@@ -186,7 +223,7 @@ document.addEventListener("keydown", (event) => {
         console.log(`modifier key pressed: ${event.key}`);
     } else if (event.code === "Backspace") {
         if (cursor !== 0) {
-            letterPrev.classList.add("cursor");
+            letterPrev.classList.add("active");
             letterPrev.classList.remove("correct", "incorrect", "typed");
         }
         letter.classList.remove("correct", "incorrect");
@@ -206,32 +243,40 @@ document.addEventListener("keydown", (event) => {
     }
 
     console.log(`cursor at ${cursor}. key is ${event.key} (${event.code})`);
-    if (cursor === l - NEW_WORDS_GEN_LETTER_OFFSET) {
-        createText();
-    } else {
-        const letterNext = document.querySelector(`#letter_${cursor}`);
-        letterNext.classList.add("cursor");
-    }
+    const letterNext = document.querySelector(`#letter_${cursor}`);
+    letterNext.classList.add("active");
 });
 
+function scrollContent() {
+    const contentElement = document.querySelector("#content");
+    const currentLine = document.querySelector(".line.active");
+
+    if (currentLine) {
+        const lineTop = currentLine.offsetTop;
+        const lineHeight = currentLine.offsetHeight;
+        const contentHeight = contentElement.offsetHeight;
+        const targetScrollTop = lineTop - (contentHeight - lineHeight) / 2;
+        contentElement.scrollTo({
+            top: targetScrollTop,
+            behavior: "smooth",
+        });
+    }
+}
 async function createText() {
     let wordElement;
     let words;
-    // l = 0;
-    // cursor = 0;
     try {
-        words = await get_words(LINE_WORD_COUND);
+        words = await get_new_line(LINE_LENGTH);
     } catch (error) {
         console.error(`${error}`);
     }
+    const currentLine = document.createElement("div");
+    currentLine.className = "line";
     for (const [i, word] of words.entries()) {
         wordElement = document.createElement("word");
         wordElement.id = `word_${i}`;
         wordElement.className = "word";
         wordElement.word = word;
-        if (i === 0) {
-            wordElement.classList.add("active");
-        }
         for (let j = 0; j < word.length; j++) {
             const letter = document.createElement("letter");
             letter.id = `letter_${l++}`;
@@ -245,19 +290,9 @@ async function createText() {
             }
             wordElement.appendChild(letter);
         }
-
-        content.appendChild(wordElement);
-        add_space();
+        currentLine.append(wordElement);
     }
-}
-
-function add_space() {
-    const spaceElement = document.createElement("sp");
-
-    spaceElement.id = `letter_${l++}`;
-    spaceElement.className = "letter";
-    spaceElement.textContent = " ";
-    content.appendChild(spaceElement);
+    content.appendChild(currentLine);
 }
 
 async function get_words(n) {
@@ -277,6 +312,16 @@ async function get_new_word() {
         return word;
     } catch (error) {
         console.error(`${error}`);
+    }
+}
+
+async function get_new_line(length) {
+    const route = `line?length=${length}`;
+    try {
+        const words = await send_backend_request(route);
+        return words;
+    } catch (error) {
+        console.log(`${error}`);
     }
 }
 

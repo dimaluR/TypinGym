@@ -1,7 +1,6 @@
 from collections import defaultdict
-import logging
 from pathlib import Path
-from random import randint
+import random
 
 import uvicorn
 from fastapi import FastAPI
@@ -24,6 +23,7 @@ app.add_middleware(
 
 _word_list = []
 _words_by_lead = defaultdict(list)
+_words_by_len = defaultdict(list)
 
 
 def fill_words():
@@ -32,10 +32,11 @@ def fill_words():
             word = _word.strip("\n")
             _word_list.append(word)
             _words_by_lead[word[0]].append(word)
+            _words_by_len[len(word)].append(word)
 
 
 def get_random_word():
-    return _word_list[randint(0, len(_word_list) - 1)]
+    return random.sample(_word_list, 1)[0]
 
 
 @app.get("/word")
@@ -47,16 +48,20 @@ def get_word() -> str:
 def get_words(n: int) -> list[str]:
     return [get_random_word() for _ in range(n)]
 
+
 @app.get("/line")
-def get_line(length: int) ->list[str]:
+def get_line(length: int) -> list[str]:
     line_length = 0
     words = []
     while True:
         word = get_random_word()
-        line_length += len(word) + 1
-        if line_length < length:
+        if line_length + len(word) < length:
+            line_length += len(word) + 1
             words.append(word)
         else:
+            rem = length - line_length + 1
+            if rem:
+                words.append(random.sample(_words_by_len[rem], 1)[0])
             break
     return words
 

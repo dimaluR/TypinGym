@@ -6,91 +6,168 @@ const LINE_WORD_COUND = 10;
 const NEW_WORDS_GEN_LETTER_OFFSET = 30;
 const LINE_LENGTH = 50;
 
-let cursor = 0;
-let l = 0;
 const appContainer = document.querySelector("#app");
 const modifierKeys = ["Control", "Alt", "Shift", "Meta", "Tab", "Escape"];
 const content = document.querySelector("#content");
-createText();
-createText();
-createText();
+let currentLine;
+let currentWord;
+let currentLetter;
 
-document.addEventListener("keydown", (event) => {
-    let letterPrev;
-    if (cursor !== 0) {
-        letterPrev = document.querySelector(`#letter_${cursor - 1}`);
+function closest_prev_line() {
+    const prevLine = currentLine.previousElementSibling;
+    if (!prevLine) {
+        return currentLine;
+    }
+    return prevLine;
+}
+
+function closest_next_line() {
+    return currentLine.nextElementSibling;
+}
+
+function closest_prev_word() {
+    if (currentWord !== currentLine.firstElementChild) {
+        return currentWord.previousElementSibling;
+    }
+    if (currentLine == content.firstElementChild) {
+        return currentWord;
+    }
+    const prevLine = closest_prev_line();
+    return prevLine.lastElementChild;
+}
+function closest_next_word() {
+    if (currentWord !== currentLine.lastElementChild) {
+        return currentWord.nextElementSibling;
     }
 
-    const letter = document.querySelector(`#letter_${cursor}`);
-    letter.classList.remove("active");
-    const currentWord = letter.closest(".word");
-    if (letter === currentWord.lastElementChild) {
+    const nextLine = closest_next_line();
+    return nextLine.firstElementChild;
+}
+
+function closest_prev_letter() {
+    if (currentLetter !== currentWord.firstElementChild) {
+        return currentLetter.previousElementSibling;
+    }
+    if (
+        currentLine === content.firstElementChild &&
+        currentWord === currentLine.firstElementChild
+    ) {
+        return currentLetter;
+    }
+    const prevWord = closest_prev_word();
+    return prevWord.lastElementChild;
+}
+
+function closest_next_letter() {
+    if (currentLetter !== currentWord.lastElementChild) {
+        return currentLetter.nextElementSibling;
+    }
+    const nextWord = closest_next_word();
+    return nextWord.firstElementChild;
+}
+
+async function init() {
+    content.innerHTML = "";
+    await createText();
+    await createText();
+    await createText();
+    currentLine = content.firstElementChild;
+    currentLine.classList.add("active");
+
+    currentWord = currentLine.firstElementChild;
+    currentWord.classList.add("active");
+
+    currentLetter = currentWord.firstElementChild;
+    currentLetter.classList.add("active");
+}
+
+await init();
+
+function set_prev_element_activity() {
+    currentLetter.classList.remove("active");
+    const prevLetter = closest_prev_letter();
+    prevLetter.classList.add("active");
+    if (currentLetter === currentWord.firstElementChild) {
         currentWord.classList.remove("active");
-        const nextWord = currentWord.nextElementSibling;
-        if (nextWord) {
-            nextWord.classList.add("active");
+        const prevWord = closest_prev_word();
+        prevWord.classList.add("active");
+        if (currentWord == currentLine.firstElementChild) {
+            currentLine.classList.remove("active");
+            const prevLine = closest_prev_line();
+            prevLine.classList.add("active");
         }
     }
-    const currentLine = currentWord.closest(".line");
-    if (currentWord === currentLine.lastElementChild && letter === currentWord.lastElementChild) {
-        currentLine.classList.remove("active");
-        const nextLine = currentLine.nextElementSibling;
-        if (nextLine) {
+}
+
+function set_next_element_activity() {
+    currentLetter.classList.remove("active");
+    const nextLetter = closest_next_letter();
+    nextLetter.classList.add("active");
+    if (currentLetter === currentWord.lastElementChild) {
+        currentWord.classList.remove("active");
+        const nextWord = closest_next_word();
+        nextWord.classList.add("active");
+        if (currentWord === currentLine.lastElementChild) {
+            currentLine.classList.remove("active");
+            const nextLine = closest_next_line();
             nextLine.classList.add("active");
-            createText();
-            scrollContent();
         }
     }
+}
+
+function set_current_elements() {
+    currentLetter = document.querySelector(".letter.active");
+    currentWord = document.querySelector(".word.active");
+    currentLine = document.querySelector(".line.active");
+}
+document.addEventListener("keydown", (event) => {
+    const letter = currentLetter;
 
     if (modifierKeys.includes(event.key)) {
         if (event.key === "Escape") {
-            content.innerHTML = "";
-            cursor = 0;
-            l = 0;
-            createText();
+            init();
             return;
         }
         console.log(`modifier key pressed: ${event.key}`);
     } else if (event.code === "Backspace") {
-        if (cursor !== 0) {
-            letterPrev.classList.add("active");
-            letterPrev.classList.remove("correct", "incorrect", "typed");
+        const prevLetter = closest_prev_letter();
+        prevLetter.classList.remove("correct", "incorrect", "typed");
+        set_prev_element_activity();
+        if (
+            currentWord === currentLine.firstElementChild &&
+            letter === currentWord.firstElementChild &&
+            currentLine !== content.firstElementChild
+        ) {
+            scrollContentToCenterLine();
+            content.removeChild(content.lastElementChild);
         }
-        letter.classList.remove("correct", "incorrect");
-        cursor = cursor === 0 ? cursor : cursor - 1;
     } else {
         letter.classList.add("typed");
-        if (letter.textContent !== " ") {
-            if (event.key === letter.textContent) {
-                letter.classList.add("correct");
-            } else {
-                letter.classList.add("incorrect");
-            }
+
+        if (event.key === letter.textContent) {
+            letter.classList.add("correct");
         } else {
-            content.scrollTop = content.scrollHeight;
+            letter.classList.add("incorrect");
         }
-        cursor = cursor < l ? cursor + 1 : cursor;
+        set_next_element_activity();
+        if (
+            currentWord === currentLine.lastElementChild &&
+            letter === currentWord.lastElementChild
+        ) {
+            scrollContentToCenterLine();
+            createText();
+        }
     }
 
-    console.log(`cursor at ${cursor}. key is ${event.key} (${event.code})`);
-    const letterNext = document.querySelector(`#letter_${cursor}`);
-    letterNext.classList.add("active");
+    console.log(`key is ${event.key} (${event.code})`);
+    set_current_elements();
 });
 
-function scrollContent() {
-    const contentElement = document.querySelector("#content");
-    const currentLine = document.querySelector(".line.active");
-
-    if (currentLine) {
-        const lineTop = currentLine.offsetTop;
-        const lineHeight = currentLine.offsetHeight;
-        const contentHeight = contentElement.offsetHeight;
-        const targetScrollTop = lineTop - (contentHeight - lineHeight) / 2;
-        contentElement.scrollTo({
-            top: targetScrollTop,
-            behavior: "smooth",
-        });
-    }
+function scrollContentToCenterLine() {
+    document.querySelector(".line.active").scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+    });
 }
 async function createText() {
     let wordElement;
@@ -104,20 +181,11 @@ async function createText() {
     currentLine.className = "line";
     for (const [i, word] of words.entries()) {
         wordElement = document.createElement("word");
-        wordElement.id = `word_${i}`;
         wordElement.className = "word";
-        wordElement.word = word;
         for (let j = 0; j < word.length; j++) {
             const letter = document.createElement("letter");
-            letter.id = `letter_${l++}`;
             letter.className = "letter";
             letter.textContent = word[j];
-            if (j == 0) {
-                letter.classList.add("first");
-            }
-            if (j == word.length - 1) {
-                letter.classList.add("last");
-            }
             wordElement.appendChild(letter);
         }
         currentLine.append(wordElement);

@@ -1,7 +1,7 @@
 :root {
     font-family: "JetBrains Mono", monospace;
     font-optical-sizing: auto;
-    font-weight: 400;
+    font-weight: 300;
     font-style: normal;
     --background-color: #1e1e2e;
     --main-color: #abe9b3;
@@ -47,27 +47,23 @@
 
 #content > * {
     display: flex;
-    gap: 0.3rem;
-    justify-content: space-between;
+    column-gap: 0.3rem;
 }
 
-.line > * {
-}
 
 .line.active {
-    background-color: red;
 }
 .word.active {
-    font-weight: bold;
+    font-weight: 500;
+}
+.letter.active {
+    text-decoration: underline;
 }
 #stats {
     grid-area: stats;
     height: 3rem;
 }
 
-.letter.active {
-    text-decoration: underline;
-}
 
 #menu {
     grid-area: menu;
@@ -100,7 +96,6 @@
     color: var(--error-color);
     display: inline-block;
     animation: wiggle 0.1s 3;
-    text-decoration: underline;
 }
 
 @keyframes wiggle {
