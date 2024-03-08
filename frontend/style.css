@@ -36,6 +36,7 @@
 
 #content {
     grid-area: content;
+    outline: none;
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-start;
@@ -45,17 +46,18 @@
     overflow-y: hidden;
 }
 
-#content > * {
+#content > .line {
     display: flex;
     column-gap: 0.3rem;
 }
 
-
 .line.active {
 }
+
 .word.active {
     font-weight: 500;
 }
+
 .letter.active {
     text-decoration: underline;
 }
