@@ -68,9 +68,9 @@ function closest_next_letter() {
 
 async function init() {
     content.innerHTML = "";
-    await createText();
-    await createText();
-    await createText();
+    await addLine();
+    await addLine();
+    await addLine();
     currentLine = content.firstElementChild;
     currentLine.classList.add("active");
 
@@ -155,7 +155,7 @@ document.addEventListener("keydown", (event) => {
             letter === currentWord.lastElementChild
         ) {
             scrollContentToCenterLine();
-            createText();
+            addLine();
         }
     }
 
@@ -169,30 +169,44 @@ function scrollContentToCenterLine() {
         block: "center",
     });
 }
-async function createText() {
+function createLetterElement(letter) {
+    const letterElement = document.createElement("letter");
+    letterElement.className = "letter";
+    letterElement.textContent = letter;
+    return letterElement;
+}
+function createWordElement(word) {
+    const wordElement = document.createElement("div");
+    wordElement.className = "word";
+    for (let j = 0; j < word.length; j++) {
+        const letter = word[j];
+        const letterElement = createLetterElement(letter);
+        wordElement.appendChild(letterElement);
+    }
+    return wordElement;
+}
+
+async function createLineElement() {
+    const lineElement = document.createElement("div");
+    lineElement.className = "line";
     let wordElement;
     let words;
     try {
         words = await get_new_line(LINE_LENGTH);
     } catch (error) {
-        console.error(`${error}`);
+        console.error(`error fetching words: ${error}`);
     }
-    const currentLine = document.createElement("div");
-    currentLine.className = "line";
-    for (const [i, word] of words.entries()) {
-        wordElement = document.createElement("word");
-        wordElement.className = "word";
-        for (let j = 0; j < word.length; j++) {
-            const letter = document.createElement("letter");
-            letter.className = "letter";
-            letter.textContent = word[j];
-            wordElement.appendChild(letter);
-        }
-        currentLine.append(wordElement);
-    }
-    content.appendChild(currentLine);
+    words.forEach((word) => {
+        wordElement = createWordElement(word);
+        lineElement.appendChild(wordElement);
+    });
+    return lineElement;
 }
 
+async function addLine() {
+    const lineElement = await createLineElement();
+    content.appendChild(lineElement);
+}
 async function get_words(n) {
     const route = `words?n=${n}`;
     try {
