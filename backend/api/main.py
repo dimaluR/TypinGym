@@ -1,14 +1,13 @@
+import random
 from collections import defaultdict
 from pathlib import Path
-import random
-
+import logging
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from fastapi.logger import logger
 DICT_ENG_1K = "./backend/api/dict/english1k.txt"
-dict_path = Path(DICT_ENG_1K)
-
+dict_path = Path(DICT_ENG_1K).resolve()
 app = FastAPI()
 
 origins = ["*"]
@@ -24,8 +23,7 @@ app.add_middleware(
 _word_list = []
 _words_by_lead = defaultdict(list)
 _words_by_len = defaultdict(list)
-
-
+_missed = set()
 def fill_words():
     with dict_path.open("r") as f:
         for _word in f.readlines():
@@ -46,8 +44,16 @@ def get_word() -> str:
 
 @app.get("/words")
 def get_words(n: int) -> list[str]:
-    return [get_random_word() for _ in range(n)]
+    repeats = 2
+    missed_to_pop = min(len(_missed),n // repeats)
+    missed = [_missed.pop() for _ in range(missed_to_pop)] * repeats
+    words =  missed + random.sample(_word_list, n-len(missed))
+    random.shuffle(words)
+    return words
 
+@app.get("/word/incorrect")
+def get_misspelled_word(word: str) -> None:
+    _missed.add(word)
 
 @app.get("/line")
 def get_line(length: int) -> list[str]:

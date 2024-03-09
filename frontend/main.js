@@ -1,21 +1,22 @@
 const BACKEND_PROTO = "http";
 const BACKEND_HOST = "127.0.0.1";
 const BACKEND_PORT = 5007;
+const INITIAL_WORD_COUND = 25;
+const NUMBER_NEW_WORDS_ON_UPDATE = 5;
 
-const LINE_WORD_COUND = 10;
-const NEW_WORDS_GEN_LETTER_OFFSET = 30;
-const LINE_LENGTH = 50;
+const MODIFIER_KEYS = ["Control", "Alt", "Shift", "Meta", "Tab", "Escape"];
 
-const modifierKeys = ["Control", "Alt", "Shift", "Meta", "Tab", "Escape"];
 const content = document.getElementById("content");
 
+// cursor keeps track of the furthest position reached.
+let cursor = 0;
+let max_cursor = 0;
+
 // track the current active text elements
-let currentLine;
 let currentWord;
 let currentLetter;
 
 // use text element relative indexes to avoid unneccessary DOM queries and make guten blazingly fast.
-let currentLineIndex;
 let currentWordIndex;
 let currentLetterIndex;
 
@@ -25,8 +26,8 @@ await main();
 async function main() {
     content.focus();
     await init();
-    content.addEventListener("keydown", async(event) => {
-        if (modifierKeys.includes(event.key)) {
+    content.addEventListener("keydown", async (event) => {
+        if (MODIFIER_KEYS.includes(event.key)) {
             if (event.key === "Escape") {
                 await init();
             }
@@ -34,46 +35,58 @@ async function main() {
         } else if (event.code === "Backspace") {
             setCurrentIndexesToPreviousLetter();
             updateActiveElements();
-            currentLetter.classList.remove("correct", "incorrect", "typed");
 
-            if (_isLastLetterOfLine()) {
-                scrollContentToCenterLine();
-                content.removeChild(content.lastElementChild);
-            }
+            currentLetter.classList.remove("correct", "incorrect", "typed");
+            cursor--;
+            if (
+            currentWord.nextElementSibling.offsetLeft === content.offsetLeft &&
+            currentLetter === currentWord.children[currentWord.children.length - 1]
+        ) {
+            scrollContentToCenterWord();
+        }
         } else {
             currentLetter.classList.add("typed");
             if (event.key === currentLetter.textContent) {
                 currentLetter.classList.add("correct");
             } else {
                 currentLetter.classList.add("incorrect");
+                sendMisspelledWord(currentWordIndex);
             }
             setCurrentIndexesToNextLetter();
             updateActiveElements();
-            if (_isFirstLetterOfLine()) {
-                scrollContentToCenterLine();
-                addLine();
-            }
+        if (
+            currentWord.offsetLeft === content.offsetLeft &&
+            currentLetterIndex === 0
+        ) {
+            scrollContentToCenterWord();
+        }
+            max_cursor = cursor === max_cursor ? max_cursor + 1 : max_cursor;
+            cursor++;
         }
 
         console.log(
-            `key is ${event.key} (${event.code}), ${currentLineIndex}:${currentWordIndex}:${currentLetterIndex}`,
+            `${event.key} (${event.code}), ${currentWordIndex}:${currentLetterIndex}, ${cursor}, ${max_cursor}`,
         );
+        
+        if (
+            currentWordIndex % NUMBER_NEW_WORDS_ON_UPDATE === 0 &&
+            currentLetterIndex === 0 &&
+            event.key !== "Backspace" &&
+            cursor === max_cursor
+        ) {
+            await addWordsToContent(NUMBER_NEW_WORDS_ON_UPDATE);
+        }
     });
 }
 
 async function init() {
     content.innerHTML = "";
-    currentLineIndex = 0;
     currentWordIndex = 0;
     currentLetterIndex = 0;
 
-    await addLine();
-    await addLine();
-    await addLine();
-    currentLine = content.firstElementChild;
-    currentLine.classList.add("active");
+    await addWordsToContent(INITIAL_WORD_COUND);
 
-    currentWord = currentLine.firstElementChild;
+    currentWord = content.firstElementChild;
     currentWord.classList.add("active");
 
     currentLetter = currentWord.firstElementChild;
@@ -83,35 +96,20 @@ async function init() {
 function setCurrentActiveElements() {
     currentLetter = document.querySelector(".letter.active");
     currentWord = document.querySelector(".word.active");
-    currentLine = document.querySelector(".line.active");
-}
-
-function _isFirstLetterOfLine() {
-    return currentWordIndex === 0 && currentLetterIndex === 0;
-}
-
-function _isLastLetterOfLine() {
-    return (
-        currentWordIndex === currentLine.children.length - 1 &&
-        currentLetterIndex === currentWord.children.length - 1
-    );
 }
 
 function updateActiveElements() {
     // remove active status from current text elements.
     currentLetter.classList.remove("active");
     currentWord.classList.remove("active");
-    currentLine.classList.remove("active");
 
     // update current text elements based on calculated index.
-    currentLine = content.children[currentLineIndex];
-    currentWord = currentLine.children[currentWordIndex];
+    currentWord = content.children[currentWordIndex];
     currentLetter = currentWord.children[currentLetterIndex];
 
     // add active statur to new current text elements.
     currentLetter.classList.add("active");
     currentWord.classList.add("active");
-    currentLine.classList.add("active");
 }
 
 function setCurrentIndexesToNextLetter() {
@@ -119,39 +117,26 @@ function setCurrentIndexesToNextLetter() {
     if (currentLetterIndex >= currentWord.children.length) {
         currentLetterIndex = 0;
         currentWordIndex++;
-        if (currentWordIndex >= currentLine.children.length) {
-            currentWordIndex = 0;
-            currentLineIndex++;
-        }
     }
 }
 
 function setCurrentIndexesToPreviousLetter() {
+    const contentElement = document.getElementById("content");
     currentLetterIndex--;
     if (currentLetterIndex < 0) {
-        currentWordIndex--;
-        if (currentWordIndex < 0) {
-            if (currentLineIndex === 0) {
-                currentWordIndex = 0;
-                currentLetterIndex = 0;
-            } else {
-                currentLineIndex--;
-                currentWordIndex =
-                    content.children[currentLineIndex].children.length - 1;
-                currentLetterIndex =
-                    content.children[currentLineIndex].children[
-                        currentWordIndex
-                    ].children.length - 1;
-            }
+        if (currentWordIndex === 0) {
+            currentWordIndex = 0;
+            currentLetterIndex = 0;
         } else {
+            currentWordIndex--;
             currentLetterIndex =
-                currentLine.children[currentWordIndex].children.length - 1;
+                contentElement.children[currentWordIndex].children.length - 1;
         }
     }
 }
 
-function scrollContentToCenterLine() {
-    currentLine.scrollIntoView({
+function scrollContentToCenterWord() {
+    currentWord.scrollIntoView({
         behavior: "smooth",
         block: "center",
     });
@@ -167,6 +152,7 @@ function createLetterElement(letter) {
 function createWordElement(word) {
     const wordElement = document.createElement("div");
     wordElement.className = "word";
+    wordElement.word = word;
     for (let j = 0; j < word.length; j++) {
         const letter = word[j];
         const letterElement = createLetterElement(letter);
@@ -175,35 +161,39 @@ function createWordElement(word) {
     return wordElement;
 }
 
-async function createLineElement() {
-    const lineElement = document.createElement("div");
-    lineElement.className = "line";
-    let wordElement;
+async function createWordElements(wordCount) {
+    const contentElement = document.getElementById("content");
     let words;
     try {
-        words = await getNewLineByLength(LINE_LENGTH);
+        words = await getNewWordsByCount(wordCount);
     } catch (error) {
         console.error(`error fetching words: ${error}`);
     }
     words.forEach((word) => {
-        wordElement = createWordElement(word);
-        lineElement.appendChild(wordElement);
+        contentElement.appendChild(createWordElement(word));
     });
-    return lineElement;
 }
 
-async function addLine() {
-    const lineElement = await createLineElement();
-    content.appendChild(lineElement);
+async function addWordsToContent(wordCount) {
+    await createWordElements(wordCount);
 }
 
-async function getNewLineByLength(length) {
-    const route = `line?length=${length}`;
+async function getNewWordsByCount(wordCount) {
+    const route = `words?n=${wordCount}`;
     try {
         const words = await sendRequestToBackend(route);
         return words;
     } catch (error) {
-        console.log(`${error}`);
+        console.error(`${error}`);
+    }
+}
+
+async function sendMisspelledWord(wordIndex) {
+    const route = `word/incorrect?word=${content.children[wordIndex].word}`;
+    try {
+        await sendRequestToBackend(route);
+    } catch (error) {
+        console.error(`failed to sent misspelled word ${word} to backend`);
     }
 }
 
