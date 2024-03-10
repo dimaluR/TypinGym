@@ -1,13 +1,23 @@
 import random
 from collections import defaultdict
 from pathlib import Path
-import logging
+
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.logger import logger
-DICT_ENG_1K = "./backend/api/dict/english1k.txt"
-dict_path = Path(DICT_ENG_1K).resolve()
+from pydantic import BaseModel
+GUTNEBER_PATH = Path.cwd()
+DICT_ENG_1K = GUTNEBER_PATH / "backend/api/dict/english1k.txt"
+assert DICT_ENG_1K.exists()
+
+class WordData(BaseModel):
+    word: str
+
+
+class CompletedWordData(BaseModel):
+    word_count: int
+    duration: int
+
 app = FastAPI()
 
 origins = ["*"]
@@ -24,8 +34,10 @@ _word_list = []
 _words_by_lead = defaultdict(list)
 _words_by_len = defaultdict(list)
 _missed = set()
+
+
 def fill_words():
-    with dict_path.open("r") as f:
+    with DICT_ENG_1K.open("r") as f:
         for _word in f.readlines():
             word = _word.strip("\n")
             _word_list.append(word)
@@ -45,15 +57,25 @@ def get_word() -> str:
 @app.get("/words")
 def get_words(n: int) -> list[str]:
     repeats = 2
-    missed_to_pop = min(len(_missed),n // repeats)
+    missed_to_pop = min(len(_missed), n // repeats)
     missed = [_missed.pop() for _ in range(missed_to_pop)] * repeats
-    words =  missed + random.sample(_word_list, n-len(missed))
+    words = missed + random.sample(_word_list, n - len(missed))
     random.shuffle(words)
     return words
 
-@app.get("/word/incorrect")
-def get_misspelled_word(word: str) -> None:
-    _missed.add(word)
+@app.post("/word/incorrect")
+def post_misspelled_word(data: WordData) -> None:
+    _missed.add(data.word)
+
+_wpm = 0
+
+def update_wpm(word_count, duration_ms):
+    global _wpm
+    _wpm = word_count / (duration_ms / 60_000) #FIX: Global use... blahhh
+
+@app.post("/word/completed")
+def post_completed_word_data(data: CompletedWordData) ->None:
+    update_wpm(data.word_count, data.duration)
 
 @app.get("/line")
 def get_line(length: int) -> list[str]:
@@ -71,6 +93,9 @@ def get_line(length: int) -> list[str]:
             break
     return words
 
+@app.get("/stats")
+def get_stats():
+    return {"wpm": f"{_wpm:02.0f}"}
 
 def _init():
     fill_words()

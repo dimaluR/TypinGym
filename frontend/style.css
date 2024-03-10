@@ -46,14 +46,6 @@
     overflow-y: hidden;
 }
 
-#content > .line {
-    display: flex;
-    column-gap: 0.3rem;
-}
-
-.line.active {
-}
-
 .word.active {
     font-weight: 500;
 }
@@ -64,8 +56,24 @@
 #stats {
     grid-area: stats;
     height: 3rem;
+    display:grid;
+    grid-template-areas:
+        "wpm acc none none";
+    grid-template-columns: repeat(4,1fr);
+}
+.stats-container {
+    color:var(--main-color);
+    display: flex;
+    gap:0.2rem;
+    align-self: flex-end;
+}
+#wpm-container {
+    grid-area: wpm;
 }
 
+#acc-container {
+    grid-area: acc;
+}
 
 #menu {
     grid-area: menu;

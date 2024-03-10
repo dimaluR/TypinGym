@@ -5,6 +5,7 @@ const INITIAL_WORD_COUND = 25;
 const NUMBER_NEW_WORDS_ON_UPDATE = 5;
 
 const MODIFIER_KEYS = ["Control", "Alt", "Shift", "Meta", "Tab", "Escape"];
+const backendUrl = `${BACKEND_PROTO}://${BACKEND_HOST}:${BACKEND_PORT}`;
 
 const content = document.getElementById("content");
 
@@ -20,6 +21,11 @@ let currentLetter;
 let currentWordIndex;
 let currentLetterIndex;
 
+// keep track of the word time start;
+let timeStart = null;
+let currentStats = {
+    wpm: 0,
+};
 // main function
 await main();
 
@@ -39,35 +45,43 @@ async function main() {
             currentLetter.classList.remove("correct", "incorrect", "typed");
             cursor--;
             if (
-            currentWord.nextElementSibling.offsetLeft === content.offsetLeft &&
-            currentLetter === currentWord.children[currentWord.children.length - 1]
-        ) {
-            scrollContentToCenterWord();
-        }
+                currentWord.nextElementSibling.offsetLeft ===
+                    content.offsetLeft &&
+                currentLetter ===
+                    currentWord.children[currentWord.children.length - 1]
+            ) {
+                scrollContentToCenterWord();
+            }
         } else {
+            // update backend when word is completed typing
             currentLetter.classList.add("typed");
             if (event.key === currentLetter.textContent) {
                 currentLetter.classList.add("correct");
             } else {
-                currentLetter.classList.add("incorrect");
+                currentLetter.classList.add("incorrect", "miss");
                 sendMisspelledWord(currentWordIndex);
             }
             setCurrentIndexesToNextLetter();
             updateActiveElements();
-        if (
-            currentWord.offsetLeft === content.offsetLeft &&
-            currentLetterIndex === 0
-        ) {
-            scrollContentToCenterWord();
-        }
+            if (
+                currentWord.offsetLeft === content.offsetLeft &&
+                currentLetterIndex === 0
+            ) {
+                scrollContentToCenterWord();
+            }
             max_cursor = cursor === max_cursor ? max_cursor + 1 : max_cursor;
             cursor++;
+            if (currentLetterIndex === 0) {
+                await sendWordCompletedStatus(currentWordIndex - 1);
+                await updateStats();
+
+            }
         }
 
         console.log(
             `${event.key} (${event.code}), ${currentWordIndex}:${currentLetterIndex}, ${cursor}, ${max_cursor}`,
         );
-        
+
         if (
             currentWordIndex % NUMBER_NEW_WORDS_ON_UPDATE === 0 &&
             currentLetterIndex === 0 &&
@@ -80,6 +94,7 @@ async function main() {
 }
 
 async function init() {
+    timeStart = Date.now();
     content.innerHTML = "";
     currentWordIndex = 0;
     currentLetterIndex = 0;
@@ -178,30 +193,78 @@ async function addWordsToContent(wordCount) {
     await createWordElements(wordCount);
 }
 
+async function updateStats() {
+    try {
+        currentStats = await getUpdatedStats();
+    } catch (error) {
+        console.warn(`counld not update stats.`);
+    }
+    const wpmElement = document.getElementById("wpm")
+    wpmElement.innerText = currentStats.wpm;
+}
+
+async function getUpdatedStats() {
+    const route = `stats`;
+    try {
+        const stats = await sendRequestToBackend(route);
+        console.log(`stats update: ${stats}`);
+        return stats;
+    } catch (error) {
+        console.log(`could not update stats`);
+    }
+}
 async function getNewWordsByCount(wordCount) {
     const route = `words?n=${wordCount}`;
     try {
         const words = await sendRequestToBackend(route);
+        console.log(`added new words: [${words}].`);
         return words;
     } catch (error) {
         console.error(`${error}`);
     }
 }
 
-async function sendMisspelledWord(wordIndex) {
-    const route = `word/incorrect?word=${content.children[wordIndex].word}`;
+async function sendWordCompletedStatus(wordIndex) {
+    const route = `word/completed`;
+    const data = {
+        word_count: wordIndex,
+        duration: Date.now() - timeStart,
+    };
+    console.log(`complted: ${JSON.stringify(data)}`);
     try {
-        await sendRequestToBackend(route);
+        await sendRequestToBackend(route, "POST", data);
     } catch (error) {
-        console.error(`failed to sent misspelled word ${word} to backend`);
+        console.error(`failed to send word completed update.`);
     }
 }
 
-async function sendRequestToBackend(route) {
+async function sendMisspelledWord(wordIndex) {
+    const route = `word/incorrect`;
+    const data = {
+        word: content.children[wordIndex].word,
+    };
     try {
-        const response = await fetch(
-            `${BACKEND_PROTO}://${BACKEND_HOST}:${BACKEND_PORT}/${route}`,
-        );
+        await sendRequestToBackend(route, "POST", data);
+    } catch (error) {
+        console.error(`failed to sent misspelled word "${word}" to backend.`);
+    }
+}
+
+async function sendRequestToBackend(route, method = "GET", data = null) {
+    const requestOptions = {
+        method: method,
+    };
+
+    if (method.toUpperCase() === "POST") {
+        requestOptions["body"] = JSON.stringify(data);
+        requestOptions["headers"] = {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+        };
+    }
+
+    try {
+        const response = await fetch(`${backendUrl}/${route}`, requestOptions);
         if (!response.ok) {
             throw new Error(`HTTP response error: ${response.status}`);
         }
