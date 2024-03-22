@@ -11,7 +11,7 @@ const content = document.getElementById("content");
 
 // cursor keeps track of the furthest position reached.
 let cursor = 0;
-let max_cursor = 0;
+let maxCursor = 0;
 
 // track the current active text elements
 let currentWord;
@@ -22,17 +22,16 @@ let currentWordIndex;
 let currentLetterIndex;
 
 // keep track of the word time start;
-let timeStart = null;
+let wordTimeStart = null;
+let letterTimeStart = null;
 let currentStats = {
     wpm: 0,
 };
 // main function
 await main();
 
-async function main() {
-    content.focus();
-    await init();
-    content.addEventListener("keydown", async (event) => {
+async function handleKeyDownEvent(event) {
+    {
         if (MODIFIER_KEYS.includes(event.key)) {
             if (event.key === "Escape") {
                 await init();
@@ -41,6 +40,7 @@ async function main() {
         } else if (event.code === "Backspace") {
             setCurrentIndexesToPreviousLetter();
             updateActiveElements();
+            letterTimeStart = Date.now();
 
             currentLetter.classList.remove("correct", "incorrect", "typed");
             cursor--;
@@ -59,8 +59,11 @@ async function main() {
                 currentLetter.classList.add("correct");
             } else {
                 currentLetter.classList.add("incorrect", "miss");
-                sendMisspelledWord(currentWordIndex);
+                sendMisspelledWord(currentWordIndex); //TODO: should update backend only on word completion...?
             }
+            // set the letter duration /TODO: we dont handle yet what happens if we used backspace.
+            currentLetter.duration = Date.now() - letterTimeStart;
+            letterTimeStart = Date.now();
             setCurrentIndexesToNextLetter();
             updateActiveElements();
             if (
@@ -69,32 +72,46 @@ async function main() {
             ) {
                 scrollContentToCenterWord();
             }
-            max_cursor = cursor === max_cursor ? max_cursor + 1 : max_cursor;
+            incrementMaxCursorIfNeeded(cursor);
             cursor++;
             if (currentLetterIndex === 0) {
                 await sendWordCompletedStatus(currentWordIndex - 1);
                 await updateStats();
-
             }
         }
-
         console.log(
-            `${event.key} (${event.code}), ${currentWordIndex}:${currentLetterIndex}, ${cursor}, ${max_cursor}`,
+            `${event.key} (${event.code}), ${currentWordIndex}:${currentLetterIndex}, ${cursor}, ${maxCursor}`,
         );
 
-        if (
-            currentWordIndex % NUMBER_NEW_WORDS_ON_UPDATE === 0 &&
-            currentLetterIndex === 0 &&
-            event.key !== "Backspace" &&
-            cursor === max_cursor
-        ) {
-            await addWordsToContent(NUMBER_NEW_WORDS_ON_UPDATE);
-        }
-    });
+        await updateContentIfNeeded(event);
+    }
+}
+
+function incrementMaxCursorIfNeeded(cursor) {
+    maxCursor = cursor === maxCursor ? maxCursor + 1 : maxCursor;
+}
+
+async function updateContentIfNeeded(keyDownEvent) {
+    console.log(
+        `${currentWordIndex % NUMBER_NEW_WORDS_ON_UPDATE === 0}, ${currentLetterIndex}, ${cursor}, ${maxCursor}`,
+    );
+    if (
+        currentWordIndex % NUMBER_NEW_WORDS_ON_UPDATE === 0 &&
+        currentLetterIndex === 0 &&
+        keyDownEvent.key !== "Backspace" &&
+        cursor === maxCursor
+    ) {
+        await addWordsToContent(NUMBER_NEW_WORDS_ON_UPDATE);
+    }
+}
+async function main() {
+    content.focus();
+    await init();
+    content.addEventListener("keydown", handleKeyDownEvent);
 }
 
 async function init() {
-    timeStart = Date.now();
+    wordTimeStart = Date.now();
     content.innerHTML = "";
     currentWordIndex = 0;
     currentLetterIndex = 0;
@@ -199,7 +216,7 @@ async function updateStats() {
     } catch (error) {
         console.warn(`counld not update stats.`);
     }
-    const wpmElement = document.getElementById("wpm")
+    const wpmElement = document.getElementById("wpm");
     wpmElement.innerText = currentStats.wpm;
 }
 
@@ -226,9 +243,21 @@ async function getNewWordsByCount(wordCount) {
 
 async function sendWordCompletedStatus(wordIndex) {
     const route = `word/completed`;
+    const word = content.children[wordIndex];
+    const wordLettersData = [];
+    for (const letter of word.children) {
+        wordLettersData.push(
+            {
+                letter: letter.innerHTML,
+                duration: letter.duration,
+                miss: letter.classList.contains("miss"),
+            }
+        );
+    }
     const data = {
         word_count: wordIndex,
-        duration: Date.now() - timeStart,
+        duration: Date.now() - wordTimeStart,
+        word_letters_data: wordLettersData,
     };
     console.log(`complted: ${JSON.stringify(data)}`);
     try {

@@ -1,22 +1,36 @@
+import logging
 import random
 from collections import defaultdict
 from pathlib import Path
-
+import statistics
 import uvicorn
-from fastapi import FastAPI, Response
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+logging.basicConfig(level=logging.INFO)
 GUTNEBER_PATH = Path.cwd()
 DICT_ENG_1K = GUTNEBER_PATH / "backend/api/dict/english1k.txt"
 assert DICT_ENG_1K.exists()
+
+MAX_ALLOWED_LETTER_DURATION = 1000
+
 
 class WordData(BaseModel):
     word: str
 
 
+class LetterData(BaseModel):
+    letter: str
+    duration: int
+    miss: bool
+
+
 class CompletedWordData(BaseModel):
     word_count: int
     duration: int
+    word_letters_data: list[LetterData]
+
 
 app = FastAPI()
 
@@ -34,6 +48,23 @@ _word_list = []
 _words_by_lead = defaultdict(list)
 _words_by_len = defaultdict(list)
 _missed = set()
+
+
+class LetterStats:
+    def __init__(self, letter: str):
+        self._letter = letter
+        self._durations = []
+
+    def add_duration(self, duration: int):
+        if duration < MAX_ALLOWED_LETTER_DURATION:
+            self._durations.append(duration)
+        logging.info(f"letter durations: {self._letter}: {self._durations}")
+
+    def get_average_duration(self):
+        return statistics.mean(self._durations)
+
+
+_letters = {}
 
 
 def fill_words():
@@ -63,19 +94,28 @@ def get_words(n: int) -> list[str]:
     random.shuffle(words)
     return words
 
+
 @app.post("/word/incorrect")
 def post_misspelled_word(data: WordData) -> None:
     _missed.add(data.word)
 
+
 _wpm = 0
+
 
 def update_wpm(word_count, duration_ms):
     global _wpm
-    _wpm = word_count / (duration_ms / 60_000) #FIX: Global use... blahhh
+    _wpm = word_count / (duration_ms / 60_000)  # FIX: Global use... blahhh
+
 
 @app.post("/word/completed")
-def post_completed_word_data(data: CompletedWordData) ->None:
+def post_completed_word_data(data: CompletedWordData) -> None:
     update_wpm(data.word_count, data.duration)
+    for letter in data.word_letters_data:
+        if letter.letter not in _letters:
+            _letters[letter.letter] = LetterStats(letter.letter)
+        _letters[letter.letter].add_duration(letter.duration)
+
 
 @app.get("/line")
 def get_line(length: int) -> list[str]:
@@ -93,9 +133,11 @@ def get_line(length: int) -> list[str]:
             break
     return words
 
+
 @app.get("/stats")
 def get_stats():
     return {"wpm": f"{_wpm:02.0f}"}
+
 
 def _init():
     fill_words()
