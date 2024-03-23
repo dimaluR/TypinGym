@@ -1,11 +1,8 @@
-const BACKEND_PROTO = "http";
-const BACKEND_HOST = "127.0.0.1";
-const BACKEND_PORT = 5007;
-const INITIAL_WORD_COUND = 25;
-const NUMBER_NEW_WORDS_ON_UPDATE = 5;
+import sendRequestToBackend from './backend_gateway.js'
+const INITIAL_WORD_COUND = 24;
+const NUMBER_NEW_WORDS_ON_UPDATE = 8;
 
 const MODIFIER_KEYS = ["Control", "Alt", "Shift", "Meta", "Tab", "Escape"];
-const backendUrl = `${BACKEND_PROTO}://${BACKEND_HOST}:${BACKEND_PORT}`;
 
 const content = document.getElementById("content");
 
@@ -123,11 +120,6 @@ async function init() {
 
     currentLetter = currentWord.firstElementChild;
     currentLetter.classList.add("active");
-}
-
-function setCurrentActiveElements() {
-    currentLetter = document.querySelector(".letter.active");
-    currentWord = document.querySelector(".word.active");
 }
 
 function updateActiveElements() {
@@ -279,27 +271,4 @@ async function sendMisspelledWord(wordIndex) {
     }
 }
 
-async function sendRequestToBackend(route, method = "GET", data = null) {
-    const requestOptions = {
-        method: method,
-    };
 
-    if (method.toUpperCase() === "POST") {
-        requestOptions["body"] = JSON.stringify(data);
-        requestOptions["headers"] = {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-        };
-    }
-
-    try {
-        const response = await fetch(`${backendUrl}/${route}`, requestOptions);
-        if (!response.ok) {
-            throw new Error(`HTTP response error: ${response.status}`);
-        }
-        const text = await response.json();
-        return text;
-    } catch (error) {
-        throw error;
-    }
-}

@@ -1,3 +1,12 @@
+a {
+    color: var(--sub-color);
+    text-decoration: none;
+}
+a:hover {
+    color: var(--text-color);
+}
+
+
 :root {
     font-family: "JetBrains Mono", monospace;
     font-optical-sizing: auto;
@@ -12,6 +21,38 @@
     --error-extra-color: #e8a2af;
     --colorful-error-color: #f28fad;
     --colorful-error-extra-color: #e8a2af;
+}
+
+#stats-page {
+    display: grid;
+    grid-template-areas:
+        "sp menu spe"
+        "plots plots plots";
+    grid-template-rows: 3rem auto;
+    grid-template-columns: 1fr 30rem 1fr;
+    position: fixed;
+    padding: 0;
+    margin: 0;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--background-color);
+    line-height: 1.5rem;
+    gap: 0.2rem;
+}
+
+#stats-page > #plots {
+    grid-area: plots;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    background-color:var(--background-color)
+
+}
+
+
+#stats-page > #menu {
 }
 
 #layout {
@@ -59,15 +100,14 @@
 #stats {
     grid-area: stats;
     height: 3rem;
-    display:grid;
-    grid-template-areas:
-        "wpm acc none none";
-    grid-template-columns: repeat(4,1fr);
+    display: grid;
+    grid-template-areas: "wpm acc none none";
+    grid-template-columns: repeat(4, 1fr);
 }
 .stats-container {
-    color:var(--main-color);
+    color: var(--main-color);
     display: flex;
-    gap:0.2rem;
+    gap: 0.2rem;
     align-self: flex-end;
 }
 #wpm-container {
