@@ -2,6 +2,9 @@ files = [
     'index.html',
     'style.css',
     'main.js',
+    'stats.html',
+    'stats.js',
+    'backend_gateway.js',
 ]
 with open('frontend.txt', 'w') as o:
     for file in files:
