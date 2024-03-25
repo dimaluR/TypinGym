@@ -1,5 +1,5 @@
-import sendRequestToBackend from './backend_gateway.js'
-const INITIAL_WORD_COUND = 24;
+import sendRequestToBackend from "./backend_gateway.js";
+const INITIAL_WORD_COUND = 16;
 const NUMBER_NEW_WORDS_ON_UPDATE = 8;
 
 const MODIFIER_KEYS = ["Control", "Alt", "Shift", "Meta", "Tab", "Escape"];
@@ -27,6 +27,46 @@ let currentStats = {
 // main function
 await main();
 
+// sliders
+const sp = document.getElementById("sp");
+const menu = document.getElementById("menu");
+
+const sliderOccurances = document.getElementById("occSlider");
+const outputOccurances = document.getElementById("occSliderValue");
+outputOccurances.innerHTML = sliderOccurances.value; // Display the default slider value
+
+// Update the current slider value (each time you drag the slider handle)
+sliderOccurances.oninput = function () {
+    outputOccurances.innerHTML = this.value;
+};
+
+const sliderErrorRate = document.getElementById("errorRateSlider");
+const outputErrorRate = document.getElementById("errorRateSliderValue");
+outputErrorRate.innerHTML = sliderErrorRate.value; // Display the default slider value
+
+// Update the current slider value (each time you drag the slider handle)
+sliderErrorRate.oninput = function () {
+    outputErrorRate.innerHTML = this.value;
+};
+
+content.onmouseover = function () {
+    content.style.cursor = "none";
+    content.classList.remove("blur");
+    sp.style.opacity = 0;
+    sp.style.transition = "opacity .2s";
+
+    menu.style.opacity = 0;
+    menu.style.transition = "opacity .2s"
+};
+
+content.onmouseleave = function () {
+    content.classList.add("blur");
+    sp.style.opacity = 1;
+    sp.style.transition = "opacity .2s";
+    
+    menu.style.opacity = 1;
+    menu.style.transition = "opacity .2s"
+};
 async function handleKeyDownEvent(event) {
     {
         if (MODIFIER_KEYS.includes(event.key)) {
@@ -238,13 +278,11 @@ async function sendWordCompletedStatus(wordIndex) {
     const word = content.children[wordIndex];
     const wordLettersData = [];
     for (const letter of word.children) {
-        wordLettersData.push(
-            {
-                letter: letter.innerHTML,
-                duration: letter.duration,
-                miss: letter.classList.contains("miss"),
-            }
-        );
+        wordLettersData.push({
+            letter: letter.innerHTML,
+            duration: letter.duration,
+            miss: letter.classList.contains("miss"),
+        });
     }
     const data = {
         word_count: wordIndex,
@@ -270,5 +308,3 @@ async function sendMisspelledWord(wordIndex) {
         console.error(`failed to sent misspelled word "${word}" to backend.`);
     }
 }
-
-

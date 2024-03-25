@@ -16,6 +16,8 @@ logging.basicConfig(level=logging.INFO)
 GUTNEBER_PATH = Path.cwd()
 DICT_ENG_1K = GUTNEBER_PATH / "backend/api/dict/english1k.txt"
 assert DICT_ENG_1K.exists()
+DICT_ENG_5K = GUTNEBER_PATH / "backend/api/dict/english5k.txt"
+assert DICT_ENG_5K.exists()
 
 MAX_ALLOWED_LETTER_DURATION = 1/(20 * 5.1 / 60000)  # equivalent to 20 WPM
 DURATION_MOVING_AVERAGE_NUM = 50
@@ -116,7 +118,7 @@ def update_letter_by_error_freq(char: str):
 
 
 def fill_words():
-    with DICT_ENG_1K.open("r") as f:
+    with DICT_ENG_5K.open("r") as f:
         for _word in f.readlines():
             word = _word.strip("\n").lower()
             _word_list.append(word)
@@ -142,7 +144,7 @@ def least_used_letter_words(num_words, words_per_letter=2):
     return words_to_add
 
 
-def freq_error_letters(num_words, words_per_letter=2):
+def freq_error_letters(num_words, words_per_letter=1):
     words_to_add = []
     for letter, error_freq in _letter_by_error_freq.items():
         if num_words <= 0:
@@ -163,13 +165,15 @@ def get_word() -> str:
 
 @app.get("/words")
 def get_words(n: int) -> list[str]:
-    repeats = 2
+    repeats = 1
     missed_to_pop = min(len(_missed), 2)
     words = [_missed.pop() for _ in range(missed_to_pop)] * repeats
-    error_words_count = min((n - len(words)), 4)
-    words.extend(freq_error_letters(error_words_count))
-    least_used_letter_words_count = n - len(words)
+    logging.info(f"missed words: {words}")
+    error_words_count = min((n - len(words)), 2)
+    words.extend(freq_error_letters(error_words_count, 2))
+    least_used_letter_words_count = min(n - len(words), 2)
     words.extend(least_used_letter_words(least_used_letter_words_count))
+    words.extend(random.sample(_word_list, n - len(words)))
     random.shuffle(words)
     logging.info(f"{words=}")
     return words

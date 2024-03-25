@@ -6,7 +6,6 @@ a:hover {
     color: var(--text-color);
 }
 
-
 :root {
     font-family: "JetBrains Mono", monospace;
     font-optical-sizing: auto;
@@ -47,10 +46,8 @@ a:hover {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    background-color:var(--background-color)
-
+    background-color: var(--background-color);
 }
-
 
 #stats-page > #menu {
 }
@@ -85,9 +82,6 @@ a:hover {
     row-gap: 0.2rem;
     align-content: flex-start;
     overflow-y: hidden;
-}
-
-#content:hover {
 }
 
 .word.active {
@@ -125,6 +119,7 @@ a:hover {
 
 #sp {
     grid-area: sp;
+    margin: 1rem;
 }
 
 #spe {
@@ -179,4 +174,56 @@ a:hover {
     100% {
         transform: translateY(0rem);
     }
+}
+
+.slidecontainer {
+    display: grid;
+    grid-template-areas:
+        "slider-text slider-text"
+        "slider slider-value";
+    grid-template-columns: auto 2rem;
+    align-items: center;
+}
+
+/* The slider itself */
+.slider {
+    grid-area: slider;
+    -webkit-appearance: none; /* Override default CSS styles */
+    appearance: none;
+    height: 1rem; /* Specified height */
+    background: var(--sub-color); /* Grey background */
+    outline: none; /* Remove outline */
+    opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+    -webkit-transition: 0.2s; /* 0.2 seconds transition on hover */
+    transition: opacity 0.2s;
+}
+
+.text {
+    font-size: 1rem;
+    color: var(--sub-color);
+}
+
+.slider-value {
+    grid-area: slider-value;
+    color: var(--sub-color);
+    justify-self: end;
+}
+
+/* Mouse-over effects */
+.slider:hover {
+    opacity: 1; /* Fully shown on mouse-over */
+}
+
+/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Override default look */
+    appearance: none;
+    width: 1rem; /* Set a specific slider handle width */
+    height: 1rem; /* Slider handle height */
+    background: var(--main-color); /* Green background */
+    cursor: pointer; /* Cursor on hover */
+}
+
+.blur {
+    filter: blur(5px);
 }

@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="stylesheet" href="style.css" />
+        <link rel="stylesheet" href="./style.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
@@ -16,19 +16,49 @@
         <div id="app">
             <div id="layout">
                 <div id="menu">
-                <nav>
-                    <a class="link" href="./stats.html">stats</a>
-                </nav></div>
+                    <nav>
+                        <a class="link" href="./stats.html">stats</a>
+                    </nav>
+                </div>
                 <div id="content" tabindex="0"></div>
                 <div id="stats">
                     <div id="wpm-container" class="stats-container">
-                        <div>wpm:</div><div id="wpm">00</div>
+                        <div>wpm:</div>
+                        <div id="wpm">00</div>
                     </div>
                     <div id="acc-container" class="stats-container">
-                        <div>acc:</div><div id="acc">00.0</div>
+                        <div>acc:</div>
+                        <div id="acc">00.0</div>
                     </div>
                 </div>
-                <div id="sp"></div>
+                <div id="sp">
+                    <div class="slidecontainer">
+                        <span id="occSliderText" class="slider-text text">occurances</span>
+                        <input
+                            type="range"
+                            name="random"
+                            min="0"
+                            max="10"
+                            value="0"
+                            class="slider"
+                            id="occSlider"
+                        />
+                        <span id="occSliderValue" class="slider-value text"></span>
+                    </div>
+                    <div class="slidecontainer">
+                                            <span id="errorRateSliderText" class="slider-text text">error-rate</span>
+                                            <input
+                                                type="range"
+                                                name="random"
+                                                min="0"
+                                                max="10"
+                                                value="0"
+                                                class="slider"
+                                                id="errorRateSlider"
+                                            />
+                                            <span id="errorRateSliderValue" class="slider-value text"></span>
+                                        </div>
+                </div>
                 <div id="spe"></div>
             </div>
         </div>

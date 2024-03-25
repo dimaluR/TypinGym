@@ -11,6 +11,8 @@ const TEXT_COLOR = "#d9e0ee";
 // --colorful-error-color: #f28fad;
 // --colorful-error-extra-color: #e8a2af;
 
+const convertLetterDurationToWpm = (duration) => 60000 / (duration * 5.1)
+
 async function getLetterStats() {
     const route = `stats/letters`;
     try {
@@ -24,11 +26,11 @@ async function getLetterStats() {
 let letterStats = await getLetterStats();
 letterStats.sort((a, b) => a.mean - b.mean);
 
-let traces = [];
+let letterDurationBoxPlotTraces = [];
 for (const letter of letterStats) {
-    traces.push({
+    letterDurationBoxPlotTraces.push({
         name: letter.letter,
-        y: letter.durations.slice(-50).map((d) => 60000 / (d * 5.1)),
+        y: letter.durations.slice(-50).map(convertLetterDurationToWpm),
         type: "box",
         boxpoints: false,
         boxmean: true,
@@ -44,16 +46,16 @@ for (const letter of letterStats) {
 letterStats.sort(
     (b,a) => a.error_freq - b.error_freq
 );
-let error_bars_x = [];
-let error_bars_y = [];
+let letterErrorFrequencyX = [];
+let letterErrorFrequencyY = [];
 for (const letter of letterStats) {
-    error_bars_x.push(letter.letter);
-    error_bars_y.push(letter.error_freq);
+    letterErrorFrequencyX.push(letter.letter);
+    letterErrorFrequencyY.push(letter.error_freq);
 }
-let error_bars = [
+let letterErrorFrequencyBarTraces = [
     {
-        x: error_bars_x,
-        y: error_bars_y,
+        x: letterErrorFrequencyX,
+        y: letterErrorFrequencyY,
         type: "bar",
         marker: {
             color: MAIN_COLOR,
@@ -67,23 +69,7 @@ let error_bars = [
     },
 ];
 
-let durations_lines = [];
-for (const letter of letterStats) {
-    if (letter.occurances < 40){
-        continue
-    }
-    durations_lines.push({
-        name: letter.letter,
-        y: letter.duration_moving_averages.map((d) => 60000 / (d * 5.1)),
-        type: "line",
-        line: {
-            width: 1,
-        },
-        marker: {
-            color: MAIN_COLOR,
-        },
-    });
-}
+
 let layout_base = {
     font: {
         family: "JetBrains Mono",
@@ -101,7 +87,5 @@ let layout_base = {
 
 const layout_box = { ...layout_base, title: "WPM (letter)", yaxis: {range: [0, 300]}};
 const layout_errors = { ...layout_base, title: "Error frequency" };
-const layout_durations = { ...layout_base, title: "WPM (letter) mean" };
-Plotly.newPlot("boxes", traces, layout_box, { displayModeBar: false });
-Plotly.newPlot("errors", error_bars, layout_errors, { displayModeBar: false });
-Plotly.newPlot("durations", durations_lines, layout_durations, { displayModeBar: false });
+Plotly.newPlot("boxes", letterDurationBoxPlotTraces, layout_box, { displayModeBar: false });
+Plotly.newPlot("errors", letterErrorFrequencyBarTraces, layout_errors, { displayModeBar: false });
