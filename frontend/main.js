@@ -1,4 +1,6 @@
 import sendRequestToBackend from "./backend_gateway.js";
+
+const SPACER_CHAR = "\u00a0";
 const INITIAL_WORD_COUND = 16;
 const NUMBER_NEW_WORDS_ON_UPDATE = 8;
 
@@ -56,16 +58,16 @@ content.onmouseover = function () {
     sp.style.transition = "opacity .2s";
 
     menu.style.opacity = 0;
-    menu.style.transition = "opacity .2s"
+    menu.style.transition = "opacity .2s";
 };
 
 content.onmouseleave = function () {
     content.classList.add("blur");
     sp.style.opacity = 1;
     sp.style.transition = "opacity .2s";
-    
+
     menu.style.opacity = 1;
-    menu.style.transition = "opacity .2s"
+    menu.style.transition = "opacity .2s";
 };
 async function handleKeyDownEvent(event) {
     {
@@ -92,7 +94,10 @@ async function handleKeyDownEvent(event) {
         } else {
             // update backend when word is completed typing
             currentLetter.classList.add("typed");
-            if (event.key === currentLetter.textContent) {
+            if (
+                event.key === currentLetter.textContent ||
+                (event.key === " " && currentLetter.textContent === SPACER_CHAR)
+            ) {
                 currentLetter.classList.add("correct");
             } else {
                 currentLetter.classList.add("incorrect", "miss");
@@ -101,20 +106,12 @@ async function handleKeyDownEvent(event) {
             // set the letter duration /TODO: we dont handle yet what happens if we used backspace.
             currentLetter.duration = Date.now() - letterTimeStart;
             letterTimeStart = Date.now();
-            setCurrentIndexesToNextLetter();
-            updateActiveElements();
-            if (
-                currentWord.offsetLeft === content.offsetLeft &&
-                currentLetterIndex === 0
-            ) {
-                scrollContentToCenterWord();
-            }
-            incrementMaxCursorIfNeeded(cursor);
-            cursor++;
-            if (currentLetterIndex === 0) {
-                await sendWordCompletedStatus(currentWordIndex - 1);
-                await updateStats();
-            }
+
+            //handle last letter of word.
+            console.log(
+                `${currentWord.children.length}, ${currentLetterIndex}`,
+            );
+            await onLetterCompleted();
         }
         console.log(
             `${event.key} (${event.code}), ${currentWordIndex}:${currentLetterIndex}, ${cursor}, ${maxCursor}`,
@@ -122,6 +119,26 @@ async function handleKeyDownEvent(event) {
 
         await updateContentIfNeeded(event);
     }
+}
+async function onLetterCompleted() {
+    if (
+        currentLetterIndex === currentWord.children.length - 1 &&
+        !currentWord.classList.contains("spacer") &&
+        cursor === maxCursor
+    ) {
+        await sendWordCompletedStatus(currentWordIndex);
+        await updateStats();
+    }
+    setCurrentIndexesToNextLetter();
+    updateActiveElements();
+    if (
+        currentWord.offsetLeft === content.offsetLeft &&
+        currentLetterIndex === 0
+    ) {
+        scrollContentToCenterWord();
+    }
+    incrementMaxCursorIfNeeded(cursor);
+    cursor++;
 }
 
 function incrementMaxCursorIfNeeded(cursor) {
@@ -213,7 +230,7 @@ function createLetterElement(letter) {
     return letterElement;
 }
 
-function createWordElement(word) {
+async function createWordElement(word) {
     const wordElement = document.createElement("div");
     wordElement.className = "word";
     wordElement.word = word;
@@ -225,7 +242,13 @@ function createWordElement(word) {
     return wordElement;
 }
 
-async function createWordElements(wordCount) {
+async function createSpacerElement(delimetor) {
+    const spaceElement = await createWordElement(delimetor);
+    spaceElement.classList.add("spacer");
+    return spaceElement;
+}
+
+async function addWordsToContent(wordCount) {
     const contentElement = document.getElementById("content");
     let words;
     try {
@@ -233,13 +256,12 @@ async function createWordElements(wordCount) {
     } catch (error) {
         console.error(`error fetching words: ${error}`);
     }
-    words.forEach((word) => {
-        contentElement.appendChild(createWordElement(word));
-    });
-}
-
-async function addWordsToContent(wordCount) {
-    await createWordElements(wordCount);
+    for (const word of words) {
+        const wordElement = await createWordElement(word);
+        const spacerElement = await createSpacerElement(SPACER_CHAR);
+        contentElement.appendChild(wordElement);
+        contentElement.appendChild(spacerElement);
+    }
 }
 
 async function updateStats() {

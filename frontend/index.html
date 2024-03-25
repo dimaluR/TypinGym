@@ -20,7 +20,7 @@
                         <a class="link" href="./stats.html">stats</a>
                     </nav>
                 </div>
-                <div id="content" tabindex="0"></div>
+                <div id="content" class="blur" tabindex="0"></div>
                 <div id="stats">
                     <div id="wpm-container" class="stats-container">
                         <div>wpm:</div>
@@ -32,32 +32,47 @@
                     </div>
                 </div>
                 <div id="sp">
-                    <div class="slidecontainer">
-                        <span id="occSliderText" class="slider-text text">occurances</span>
-                        <input
-                            type="range"
-                            name="random"
-                            min="0"
-                            max="10"
-                            value="0"
-                            class="slider"
-                            id="occSlider"
-                        />
-                        <span id="occSliderValue" class="slider-value text"></span>
+                    <div class="" id="">
+                        <span class="text"><b>Settings</b></span>
+                        <div class="slidecontainer">
+                            <span id="occSliderText" class="slider-text text"
+                                >occurances</span
+                            >
+                            <input
+                                type="range"
+                                name="random"
+                                min="0"
+                                max="10"
+                                value="0"
+                                class="slider"
+                                id="occSlider"
+                            />
+                            <span
+                                id="occSliderValue"
+                                class="slider-value text"
+                            ></span>
+                        </div>
+                        <div class="slidecontainer">
+                            <span
+                                id="errorRateSliderText"
+                                class="slider-text text"
+                                >error-rate</span
+                            >
+                            <input
+                                type="range"
+                                name="random"
+                                min="0"
+                                max="10"
+                                value="0"
+                                class="slider"
+                                id="errorRateSlider"
+                            />
+                            <span
+                                id="errorRateSliderValue"
+                                class="slider-value text"
+                            ></span>
+                        </div>
                     </div>
-                    <div class="slidecontainer">
-                                            <span id="errorRateSliderText" class="slider-text text">error-rate</span>
-                                            <input
-                                                type="range"
-                                                name="random"
-                                                min="0"
-                                                max="10"
-                                                value="0"
-                                                class="slider"
-                                                id="errorRateSlider"
-                                            />
-                                            <span id="errorRateSliderValue" class="slider-value text"></span>
-                                        </div>
                 </div>
                 <div id="spe"></div>
             </div>

@@ -24,14 +24,12 @@ async function getLetterStats() {
 }
 
 function calcArrayAverage(array, num) {
-    console.log(`${array}`)
     const arraySlice = array.slice(-num);
     const arraySum = arraySlice.reduce((a,b) => a + b, 0);
     return arraySum / num;
 }
 
 let letterStats = await getLetterStats();
-console.log(`${letterStats}`)
 for (const letter of letterStats) {
     letter.wpm = letter.durations.map(convertLetterDurationToWpm)
 }
