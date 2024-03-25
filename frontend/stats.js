@@ -23,14 +23,26 @@ async function getLetterStats() {
     }
 }
 
+function calcArrayAverage(array, num) {
+    console.log(`${array}`)
+    const arraySlice = array.slice(-num);
+    const arraySum = arraySlice.reduce((a,b) => a + b, 0);
+    return arraySum / num;
+}
+
 let letterStats = await getLetterStats();
-letterStats.sort((a, b) => a.mean - b.mean);
+console.log(`${letterStats}`)
+for (const letter of letterStats) {
+    letter.wpm = letter.durations.map(convertLetterDurationToWpm)
+}
+
+letterStats.sort((b, a) => {return calcArrayAverage(a.wpm, 50) - calcArrayAverage(b.wpm, 50)});
 
 let letterDurationBoxPlotTraces = [];
 for (const letter of letterStats) {
     letterDurationBoxPlotTraces.push({
         name: letter.letter,
-        y: letter.durations.slice(-50).map(convertLetterDurationToWpm),
+        y: letter.wpm,
         type: "box",
         boxpoints: false,
         boxmean: true,
