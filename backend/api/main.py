@@ -5,12 +5,10 @@ import random
 from collections import defaultdict
 from pathlib import Path
 import statistics
-import sortedcontainers
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from sortedcontainers import SortedDict
 
 logging.basicConfig(level=logging.INFO)
 GUTNEBER_PATH = Path.cwd()
@@ -19,8 +17,10 @@ assert DICT_ENG_1K.exists()
 DICT_ENG_5K = GUTNEBER_PATH / "backend/api/dict/english5k.txt"
 assert DICT_ENG_5K.exists()
 
-MAX_ALLOWED_LETTER_DURATION = 1/(20 * 5.1 / 60000)  # equivalent to 20 WPM
+MAX_ALLOWED_LETTER_DURATION = 1 / (20 * 5.1 / 60000)  # equivalent to 20 WPM
 DURATION_MOVING_AVERAGE_NUM = 50
+MAX_ERROR_WORDS_PCT = 50
+MAX_LEAST_USED_WORDS_PCT = 50
 
 
 class WordData(BaseModel):
@@ -165,13 +165,17 @@ def get_word() -> str:
 
 @app.get("/words")
 def get_words(n: int) -> list[str]:
-    repeats = 1
+    m = n - 2
+    max_error_words = math.floor((MAX_ERROR_WORDS_PCT / 100) * m)
+    max_least_used = m - max_error_words
+    logging.info(f"total: {n}, errors: {max_error_words}, least: {max_least_used}")
+    repeats = 2
     missed_to_pop = min(len(_missed), 2)
     words = [_missed.pop() for _ in range(missed_to_pop)] * repeats
     logging.info(f"missed words: {words}")
-    error_words_count = min((n - len(words)), 2)
+    error_words_count = min((n - len(words)), max_error_words)
     words.extend(freq_error_letters(error_words_count, 2))
-    least_used_letter_words_count = min(n - len(words), 2)
+    least_used_letter_words_count = min(n - len(words), m - max_error_words)
     words.extend(least_used_letter_words(least_used_letter_words_count))
     words.extend(random.sample(_word_list, n - len(words)))
     random.shuffle(words)

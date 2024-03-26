@@ -10,6 +10,7 @@ a:hover {
     font-family: "JetBrains Mono", monospace;
     font-optical-sizing: auto;
     font-weight: 300;
+    font-size: 1rem;
     font-style: normal;
     --background-color: #1e1e2e;
     --main-color: #abe9b3;
@@ -80,6 +81,7 @@ a:hover {
     flex-wrap: wrap;
     justify-content: flex-start;
     row-gap: 0.2rem;
+    column-gap: 0.2rem;
     align-content: flex-start;
     overflow-y: hidden;
 }
@@ -125,6 +127,10 @@ a:hover {
 
 .letter {
     color: var(--sub-color);
+}
+
+.letter.active {
+    text-decoration: underline;
 }
 
 .typed {
@@ -195,7 +201,7 @@ a:hover {
     grid-area: slider;
     -webkit-appearance: none; /* Override default CSS styles */
     appearance: none;
-    height: 1rem; /* Specified height */
+    height: 0.75rem; /* Specified height */
     background: var(--sub-color); /* Grey background */
     outline: none; /* Remove outline */
     opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
@@ -204,8 +210,8 @@ a:hover {
 }
 
 .text {
-    font-size: 1rem;
     color: var(--sub-color);
+    font-size: 0.8rem;
 }
 
 .slider-value {

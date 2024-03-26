@@ -2,8 +2,7 @@ import sendRequestToBackend from "./backend_gateway.js";
 
 const SPACER_CHAR = "\u00a0";
 const INITIAL_WORD_COUND = 16;
-const NUMBER_NEW_WORDS_ON_UPDATE = 8;
-
+const TOTAL_WORDS_ON_UPDATE = 8;
 const MODIFIER_KEYS = ["Control", "Alt", "Shift", "Meta", "Tab", "Escape"];
 
 const content = document.getElementById("content");
@@ -26,6 +25,7 @@ let letterTimeStart = null;
 let currentStats = {
     wpm: 0,
 };
+
 // main function
 await main();
 
@@ -33,24 +33,7 @@ await main();
 const sp = document.getElementById("sp");
 const menu = document.getElementById("menu");
 
-const sliderOccurances = document.getElementById("occSlider");
-const outputOccurances = document.getElementById("occSliderValue");
-outputOccurances.innerHTML = sliderOccurances.value; // Display the default slider value
-
-// Update the current slider value (each time you drag the slider handle)
-sliderOccurances.oninput = function () {
-    outputOccurances.innerHTML = this.value;
-};
-
-const sliderErrorRate = document.getElementById("errorRateSlider");
-const outputErrorRate = document.getElementById("errorRateSliderValue");
-outputErrorRate.innerHTML = sliderErrorRate.value; // Display the default slider value
-
-// Update the current slider value (each time you drag the slider handle)
-sliderErrorRate.oninput = function () {
-    outputErrorRate.innerHTML = this.value;
-};
-
+//
 content.onmouseover = function () {
     content.style.cursor = "none";
     content.classList.remove("blur");
@@ -147,15 +130,15 @@ function incrementMaxCursorIfNeeded(cursor) {
 
 async function updateContentIfNeeded(keyDownEvent) {
     console.log(
-        `${currentWordIndex % NUMBER_NEW_WORDS_ON_UPDATE === 0}, ${currentLetterIndex}, ${cursor}, ${maxCursor}`,
+        `${currentWordIndex % TOTAL_WORDS_ON_UPDATE === 0}, ${currentLetterIndex}, ${cursor}, ${maxCursor}`,
     );
     if (
-        currentWordIndex % NUMBER_NEW_WORDS_ON_UPDATE === 0 &&
+        currentWordIndex % TOTAL_WORDS_ON_UPDATE === 0 &&
         currentLetterIndex === 0 &&
         keyDownEvent.key !== "Backspace" &&
         cursor === maxCursor
     ) {
-        await addWordsToContent(NUMBER_NEW_WORDS_ON_UPDATE);
+        await addWordsToContent(TOTAL_WORDS_ON_UPDATE);
     }
 }
 async function main() {
@@ -258,9 +241,7 @@ async function addWordsToContent(wordCount) {
     }
     for (const word of words) {
         const wordElement = await createWordElement(word);
-        const spacerElement = await createSpacerElement(SPACER_CHAR);
         contentElement.appendChild(wordElement);
-        contentElement.appendChild(spacerElement);
     }
 }
 
@@ -318,6 +299,7 @@ async function sendWordCompletedStatus(wordIndex) {
         console.error(`failed to send word completed update.`);
     }
 }
+
 
 async function sendMisspelledWord(wordIndex) {
     const route = `word/incorrect`;
