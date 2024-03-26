@@ -163,17 +163,19 @@ def get_word() -> str:
     return get_random_word()
 
 
+def get_missed_words(n_words: int, repeats: int):
+    words = [_missed.pop() for _ in range(min(len(_missed), n_words))] * repeats
+    logging.info(f"words: {words}")
+    return words
+
+
 @app.get("/words")
 def get_words(n: int) -> list[str]:
     m = n - 2
-    max_error_words = math.floor((MAX_ERROR_WORDS_PCT / 100) * m)
-    max_least_used = m - max_error_words
-    logging.info(f"total: {n}, errors: {max_error_words}, least: {max_least_used}")
-    repeats = 2
-    missed_to_pop = min(len(_missed), 2)
-    words = [_missed.pop() for _ in range(missed_to_pop)] * repeats
+    max_error_words = 2
+    words = get_missed_words(n_words=2, repeats=2)
     logging.info(f"missed words: {words}")
-    error_words_count = min((n - len(words)), max_error_words)
+    error_words_count = min((n - len(words)), 2)
     words.extend(freq_error_letters(error_words_count, 2))
     least_used_letter_words_count = min(n - len(words), m - max_error_words)
     words.extend(least_used_letter_words(least_used_letter_words_count))
