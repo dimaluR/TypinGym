@@ -21,6 +21,8 @@ MAX_ALLOWED_LETTER_DURATION = 1 / (20 * 5.1 / 60000)  # equivalent to 20 WPM
 DURATION_MOVING_AVERAGE_NUM = 50
 MAX_ERROR_WORDS_PCT = 50
 MAX_LEAST_USED_WORDS_PCT = 50
+CAPITALIZE_FREQ = 4
+_wpm = 0
 
 
 class WordData(BaseModel):
@@ -168,6 +170,8 @@ def get_missed_words(n_words: int, repeats: int):
     logging.info(f"words: {words}")
     return words
 
+def capitalize_word(word: str):
+    return word.capitalize()
 
 @app.get("/words")
 def get_words(n: int) -> list[str]:
@@ -181,6 +185,7 @@ def get_words(n: int) -> list[str]:
     words.extend(least_used_letter_words(least_used_letter_words_count))
     words.extend(random.sample(_word_list, n - len(words)))
     random.shuffle(words)
+    words = [capitalize_word(word) if idx % CAPITALIZE_FREQ == 0 else word for idx, word in enumerate(words)]
     logging.info(f"{words=}")
     return words
 
@@ -190,7 +195,6 @@ def post_misspelled_word(data: WordData) -> None:
     _missed.add(data.word)
 
 
-_wpm = 0
 
 
 def update_wpm(word_count, duration_ms):
@@ -202,6 +206,8 @@ def update_wpm(word_count, duration_ms):
 def post_completed_word_data(data: CompletedWordData) -> None:
     update_wpm(data.word_count, data.duration)
     for letter in data.word_letters_data:
+        if letter.letter.isupper():
+            letter.letter = letter.letter.lower()
         _letters[letter.letter].add_duration(letter.duration)
         if letter.miss:
             _letters[letter.letter].add_miss()

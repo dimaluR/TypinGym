@@ -77,16 +77,12 @@ async function handleKeyDownEvent(event) {
         } else {
             // update backend when word is completed typing
             currentLetter.classList.add("typed");
-            if (
-                event.key === currentLetter.textContent ||
-                (event.key === " " && currentLetter.textContent === SPACER_CHAR)
-            ) {
+            console.log(`${currentLetter.textContent}, ${currentLetter.innerText}`)
+            if (event.key === currentLetter.textContent || (event.key === ' ' && currentLetter.textContent === SPACER_CHAR)) {
                 currentLetter.classList.add("correct");
             } else {
                 currentLetter.classList.add("incorrect", "miss");
-                sendMisspelledWord(currentWordIndex); //TODO: should update backend only on word completion...?
             }
-            // set the letter duration /TODO: we dont handle yet what happens if we used backspace.
             currentLetter.duration = Date.now() - letterTimeStart;
             letterTimeStart = Date.now();
 
@@ -217,18 +213,12 @@ async function createWordElement(word) {
     const wordElement = document.createElement("div");
     wordElement.className = "word";
     wordElement.word = word;
-    for (let j = 0; j < word.length; j++) {
-        const letter = word[j];
+    for (const letter of word) {
         const letterElement = createLetterElement(letter);
         wordElement.appendChild(letterElement);
     }
+    wordElement.appendChild(createLetterElement(SPACER_CHAR));
     return wordElement;
-}
-
-async function createSpacerElement(delimetor) {
-    const spaceElement = await createWordElement(delimetor);
-    spaceElement.classList.add("spacer");
-    return spaceElement;
 }
 
 async function addWordsToContent(wordCount) {
@@ -281,6 +271,9 @@ async function sendWordCompletedStatus(wordIndex) {
     const word = content.children[wordIndex];
     const wordLettersData = [];
     for (const letter of word.children) {
+        if (letter.innerHTML === "&nbsp;"){
+            continue
+        }
         wordLettersData.push({
             letter: letter.innerHTML,
             duration: letter.duration,

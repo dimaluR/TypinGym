@@ -81,7 +81,6 @@ a:hover {
     flex-wrap: wrap;
     justify-content: flex-start;
     row-gap: 0.2rem;
-    column-gap: 0.2rem;
     align-content: flex-start;
     overflow-y: hidden;
 }
