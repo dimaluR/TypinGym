@@ -9,6 +9,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from dataclasses import dataclass
 
 logging.basicConfig(level=logging.INFO)
 GUTNEBER_PATH = Path.cwd()
@@ -19,10 +20,13 @@ assert DICT_ENG_5K.exists()
 
 MAX_ALLOWED_LETTER_DURATION = 1 / (20 * 5.1 / 60000)  # equivalent to 20 WPM
 DURATION_MOVING_AVERAGE_NUM = 50
-MAX_ERROR_WORDS_PCT = 50
-MAX_LEAST_USED_WORDS_PCT = 50
-CAPITALIZE_FREQ = 4
 _wpm = 0
+
+_config = {
+    "capitalize_freq": 4,
+    "surround_freq": 3,
+    "surrounds": ["()", "[]", "{}", "<>"]
+}
 
 
 class WordData(BaseModel):
@@ -48,8 +52,7 @@ origins = ["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_credentials=True, allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -170,8 +173,15 @@ def get_missed_words(n_words: int, repeats: int):
     logging.info(f"words: {words}")
     return words
 
+
 def capitalize_word(word: str):
     return word.capitalize()
+
+
+def surround_word(word: str):
+    s = random.sample(_config["surrounds"], 1)[0]
+    return s[0] + word + s[1]
+
 
 @app.get("/words")
 def get_words(n: int) -> list[str]:
@@ -185,16 +195,27 @@ def get_words(n: int) -> list[str]:
     words.extend(least_used_letter_words(least_used_letter_words_count))
     words.extend(random.sample(_word_list, n - len(words)))
     random.shuffle(words)
-    words = [capitalize_word(word) if idx % CAPITALIZE_FREQ == 0 else word for idx, word in enumerate(words)]
+    words = [capitalize_word(word) if idx % _config["capitalize_freq"] == 0 else word for idx, word in enumerate(words)]
+    words = [surround_word(word) if idx % _config["surround_freq"] == 0 else word for idx, word in enumerate(words)]
     logging.info(f"{words=}")
     return words
+
+
+@app.get("/config")
+def get_config():
+    return _config
+
+
+@app.post("/config")
+def post_config(data: dict):
+    for key, value in data.items():
+        logging.info(f"setting config: [{key}]: {value}")
+        _config.update({key: value})
 
 
 @app.post("/word/incorrect")
 def post_misspelled_word(data: WordData) -> None:
     _missed.add(data.word)
-
-
 
 
 def update_wpm(word_count, duration_ms):
