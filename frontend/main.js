@@ -15,7 +15,6 @@ let maxCursor = 0;
 let currentWord;
 let currentLetter;
 
-// use text element relative indexes to avoid unneccessary DOM queries and make guten blazingly fast.
 let currentWordIndex;
 let currentLetterIndex;
 
@@ -26,6 +25,12 @@ let currentStats = {
     wpm: 0,
 };
 
+let _config = {
+    capitalize_freq: 100,
+    surround_freq: 100,
+    punctuation_freq: 100,
+};
+
 // main function
 await main();
 
@@ -33,6 +38,30 @@ await main();
 const sp = document.getElementById("sp");
 const menu = document.getElementById("menu");
 
+const capitalFreqInput = document.getElementById("capitalFreqInput");
+capitalFreqInput.value = _config.capitalize_freq;
+const surroundFreqInput = document.getElementById("surroundFreqInput");
+surroundFreqInput.value = _config.surround_freq;
+const punctuationFreqInput = document.getElementById("punctuationFreqInput");
+punctuationFreqInput.value = _config.punctuation_freq;
+
+capitalFreqInput.oninput = async function () {
+    _config.capitalize_freq = this.value;
+    console.log(`updating capitalize freq with ${this.value}`);
+    await updateConfig()
+};
+
+punctuationFreqInput.oninput = async function () {
+    _config.punctuation_freq = this.value;
+    console.log(`updating capitalize freq with ${this.value}`);
+    await updateConfig()
+}
+
+surroundFreqInput.oninput = async function () {
+    _config.surround_freq = this.value;
+    console.log(`updating surround freq with ${this.value}`);
+    await updateConfig()
+}
 //
 content.onmouseover = function () {
     content.style.cursor = "none";
@@ -77,8 +106,13 @@ async function handleKeyDownEvent(event) {
         } else {
             // update backend when word is completed typing
             currentLetter.classList.add("typed");
-            console.log(`${currentLetter.textContent}, ${currentLetter.innerText}`)
-            if (event.key === currentLetter.textContent || (event.key === ' ' && currentLetter.textContent === SPACER_CHAR)) {
+            console.log(
+                `${currentLetter.textContent}, ${currentLetter.innerText}`,
+            );
+            if (
+                event.key === currentLetter.textContent ||
+                (event.key === " " && currentLetter.textContent === SPACER_CHAR)
+            ) {
                 currentLetter.classList.add("correct");
             } else {
                 currentLetter.classList.add("incorrect", "miss");
@@ -271,8 +305,8 @@ async function sendWordCompletedStatus(wordIndex) {
     const word = content.children[wordIndex];
     const wordLettersData = [];
     for (const letter of word.children) {
-        if (letter.innerHTML === "&nbsp;"){
-            continue
+        if (letter.innerHTML === "&nbsp;") {
+            continue;
         }
         wordLettersData.push({
             letter: letter.innerHTML,
@@ -294,14 +328,12 @@ async function sendWordCompletedStatus(wordIndex) {
 }
 
 
-async function sendMisspelledWord(wordIndex) {
-    const route = `word/incorrect`;
-    const data = {
-        word: content.children[wordIndex].word,
-    };
+async function updateConfig() {
+    const route = "config/";
     try {
-        await sendRequestToBackend(route, "POST", data);
+        await sendRequestToBackend(route, "POST", _config);
     } catch (error) {
-        console.error(`failed to sent misspelled word "${word}" to backend.`);
+        console.error(`could not send updated configuration.`);
     }
+    await init();
 }

@@ -35,7 +35,6 @@ for (const letter of letterStats) {
 }
 
 letterStats.sort((b, a) => {return calcArrayAverage(a.wpm, 50) - calcArrayAverage(b.wpm, 50)});
-
 let letterDurationBoxPlotTraces = [];
 for (const letter of letterStats) {
     letterDurationBoxPlotTraces.push({

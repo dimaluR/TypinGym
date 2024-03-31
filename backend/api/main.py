@@ -1,10 +1,12 @@
 import logging
 import math
-from string import ascii_lowercase
+from string import ascii_lowercase, punctuation
 import random
 from collections import defaultdict
 from pathlib import Path
 import statistics
+import string
+from typing import Callable
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,10 +25,11 @@ DURATION_MOVING_AVERAGE_NUM = 50
 _wpm = 0
 
 _config = {
-    "capitalize_freq": 4,
-    "surround_freq": 3,
-    "surrounds": ["()", "[]", "{}", "<>"]
+    "capitalize_freq": 100,
+    "surround_freq": 100,
+    "punctuation_freq": 100,
 }
+SURROUNDS = [("(", ")"), ("[", "]"), ("{", "}"), ("<", ">"), ("</", ">"), ('"', '"'), ("'", "'")]
 
 
 class WordData(BaseModel):
@@ -52,7 +55,8 @@ origins = ["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True, allow_methods=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -61,6 +65,24 @@ _words_by_lead = defaultdict(list)
 _words_by_len = defaultdict(list)
 _words_by_letter = defaultdict(list)
 _missed = set()
+
+_punctuations = {
+    p: {
+        "misses": 0,
+        "hits": 1,
+        "durations": [],
+    }
+    for p in string.punctuation
+}
+
+_surrounds = {
+    surrounds: {
+        "misses": 0,
+        "hits": 1,
+        "durations": [],
+    }
+    for surrounds in SURROUNDS
+}
 
 
 class LetterStats:
@@ -179,8 +201,25 @@ def capitalize_word(word: str):
 
 
 def surround_word(word: str):
-    s = random.sample(_config["surrounds"], 1)[0]
+    # s = random.sample(SURROUNDS, 1)[0]
+    weights = [s["misses"] / s["hits"] or 0.25 for s in _surrounds.values()]
+    surrounds = list(_surrounds)
+    s = random.choices(surrounds, weights, k=1)[0]
+    logging.info(f"surrounds: {list(zip(surrounds, weights))}")
+    logging.info(f"s: {s}")
     return s[0] + word + s[1]
+
+
+def add_punctuation(word: str):
+    weights = [p["misses"] / p["hits"] or 0.25 for p in _punctuations.values()]
+    symbols = list(_punctuations)
+    logging.info(f"punc: {list(zip(symbols, weights))}")
+    p = random.choices(symbols, weights, k=2)
+    return p[0] + word + p[1]
+
+
+def apply_modifier(word: str, modifier: Callable, p: int):
+    return modifier(word) if random.random() < 1 / p else word
 
 
 @app.get("/words")
@@ -195,8 +234,9 @@ def get_words(n: int) -> list[str]:
     words.extend(least_used_letter_words(least_used_letter_words_count))
     words.extend(random.sample(_word_list, n - len(words)))
     random.shuffle(words)
-    words = [capitalize_word(word) if idx % _config["capitalize_freq"] == 0 else word for idx, word in enumerate(words)]
-    words = [surround_word(word) if idx % _config["surround_freq"] == 0 else word for idx, word in enumerate(words)]
+    words = [apply_modifier(word, capitalize_word, _config["capitalize_freq"]) for word in words]
+    words = [apply_modifier(word, surround_word, _config["surround_freq"]) for word in words]
+    words = [apply_modifier(word, add_punctuation, _config["punctuation_freq"]) for word in words]
     logging.info(f"{words=}")
     return words
 
@@ -207,7 +247,8 @@ def get_config():
 
 
 @app.post("/config")
-def post_config(data: dict):
+def post_config(data: dict[str, int]):
+    logging.info(f"recieved config update {data}")
     for key, value in data.items():
         logging.info(f"setting config: [{key}]: {value}")
         _config.update({key: value})
@@ -223,17 +264,42 @@ def update_wpm(word_count, duration_ms):
     _wpm = word_count / (duration_ms / 60_000)  # FIX: Global use... blahhh
 
 
+def handle_completed_punctuation(letter: LetterData):
+    for surrounds in _surrounds:
+        (open_bracket, close_bracket) = surrounds
+        if letter.letter in open_bracket or letter.letter in close_bracket:
+            _surrounds[surrounds]["hits"] += 1
+            _surrounds[surrounds]["durations"].append(letter.duration)
+            if letter.miss:
+                _surrounds[surrounds]["misses"] += 1
+    _punctuations[letter.letter]["hits"] += 1
+    _punctuations[letter.letter]["durations"].append(letter.duration)
+    if letter.miss:
+        _punctuations[letter.letter]["misses"] += 1
+
+
 @app.post("/word/completed")
 def post_completed_word_data(data: CompletedWordData) -> None:
     update_wpm(data.word_count, data.duration)
     for letter in data.word_letters_data:
-        if letter.letter.isupper():
-            letter.letter = letter.letter.lower()
-        _letters[letter.letter].add_duration(letter.duration)
+        char = letter.letter
+        match letter.letter:
+            case "&amp;":
+                letter.letter = "&"
+            case "&lt;":
+                letter.letter = "<"
+            case "&gt;":
+                letter.letter = ">"
+        if letter.letter in _punctuations:
+            handle_completed_punctuation(letter)
+            continue
+        if char.isupper():
+            char = letter.letter.lower()
+        _letters[char].add_duration(letter.duration)
         if letter.miss:
-            _letters[letter.letter].add_miss()
-        update_letter_by_occurance(letter.letter)
-        update_letter_by_error_freq(letter.letter)
+            _letters[char].add_miss()
+        update_letter_by_occurance(char)
+        update_letter_by_error_freq(char)
 
 
 @app.get("/stats")
