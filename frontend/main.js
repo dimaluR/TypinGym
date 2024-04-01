@@ -94,6 +94,7 @@ async function handleKeyDownEvent(event) {
             letterTimeStart = Date.now();
 
             currentLetter.classList.remove("correct", "incorrect", "typed");
+            currentLetter.classList.add("backtrack");
             cursor--;
             if (
                 currentWord.nextElementSibling.offsetLeft ===

@@ -21,7 +21,7 @@ a:hover {
     --error-extra-color: #e8a2af;
     --colorful-error-color: #f28fad;
     --colorful-error-extra-color: #e8a2af;
-    --miss-color: #342225;
+    --miss-color: #ecd444;
 }
 
 #stats-page {
@@ -142,19 +142,19 @@ a:hover {
     animation: drop 0.1s 1;
 }
 
-
 .miss {
-    text-decoration: underline;
-    text-decoration-color: var(--error-color);
 }
 
+.backtrack {
+    text-decoration: underline;
+    text-decoration-color: var(--miss-color);
+}
 
 .incorrect {
     color: var(--error-color);
     display: inline-block;
     animation: wiggle 0.1s 3;
 }
-
 
 @keyframes wiggle {
     0% {
@@ -237,4 +237,3 @@ a:hover {
 .blur {
     filter: blur(5px);
 }
-
