@@ -34,43 +34,49 @@
                 <div id="sp">
                     <span class="text"><b>Settings</b></span>
                     <div class="slidecontainer">
-                        <span class="slider-text text">occurances</span>
-                        <input type="range" class="slider" id="occSlider" />
-                        <span
-                            id="occSliderValue"
-                            class="slider-value text"
-                        ></span>
+                        <span class="slider-text text">capitals</span>
+                        <input
+                            type="range"
+                            class="slider"
+                            id="capitalFreqSlider"
+                            min="0"
+                            max="10"
+                            value="0"
+                        />
+                        <span id="capitalFreqValue" class="slider-value text"
+                            >0</span
+                        >
                     </div>
                     <div class="slidecontainer">
-                        <span class="slider-text text">error-rate</span>
-                        <input type="range" class="slider" id="errSlider" />
+                        <span class="slider-text text">surrounds</span>
+                        <input
+                            type="range"
+                            class="slider"
+                            id="surroundFreqSlider"
+                            min="0"
+                            max="10"
+                            value="0"
+                        />
+                        <span id="surroundFreqValue" class="slider-value text"
+                            >0</span
+                        >
+                    </div>
+                    <div class="slidecontainer">
+                        <span class="slider-text text">punctuation</span>
+                        <input
+                            type="range"
+                            class="slider"
+                            id="punctuationFreqSlider"
+                            min="0"
+                            max="10"
+                            value="0"
+                        />
                         <span
-                            id="errSliderValue"
+                            id="punctuationFreqValue"
                             class="slider-value text"
-                        ></span>
+                            >0</span
+                        >
                     </div>
-                    <div id="capitalFreqContainer">
-                        <span class="text">capital-freq</span>
-                        <input
-                            id="capitalFreqInput"
-                            type="number"
-                            name="capitalFreqInput"
-                        />
-                    </div>
-                    <div class="surroundFreqContainer">
-                        <span class="text">surround-freq</span>
-                        <input
-                            id="surroundFreqInput"
-                            type="number"
-                        />
-                    </div>
-                    <div class="punctuationFreqContainer">
-                                            <span class="text">punctuation-freq</span>
-                                            <input
-                                                id="punctuationFreqInput"
-                                                type="number"
-                                            />
-                                        </div>
                 </div>
                 <div id="spe"></div>
             </div>

@@ -238,6 +238,6 @@ a:hover {
     cursor: pointer; /* Cursor on hover */
 }
 
-.blur {
-    filter: blur(5px);
-}
+/* .blur { */
+/*     filter: blur(5px); */
+/* } */

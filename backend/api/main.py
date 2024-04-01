@@ -201,7 +201,6 @@ def capitalize_word(word: str):
 
 
 def surround_word(word: str):
-    # s = random.sample(SURROUNDS, 1)[0]
     weights = [s["misses"] / s["hits"] or 0.25 for s in _surrounds.values()]
     surrounds = list(_surrounds)
     s = random.choices(surrounds, weights, k=1)[0]
@@ -219,6 +218,8 @@ def add_punctuation(word: str):
 
 
 def apply_modifier(word: str, modifier: Callable, p: int):
+    if p == 0:
+        return word
     return modifier(word) if random.random() < 1 / p else word
 
 
@@ -278,18 +279,22 @@ def handle_completed_punctuation(letter: LetterData):
         _punctuations[letter.letter]["misses"] += 1
 
 
+def map_special_keys_to_characters(letter: LetterData):
+    match letter.letter:
+        case "&amp;":
+            letter.letter = "&"
+        case "&lt;":
+            letter.letter = "<"
+        case "&gt;":
+            letter.letter = ">"
+
+
 @app.post("/word/completed")
 def post_completed_word_data(data: CompletedWordData) -> None:
     update_wpm(data.word_count, data.duration)
     for letter in data.word_letters_data:
         char = letter.letter
-        match letter.letter:
-            case "&amp;":
-                letter.letter = "&"
-            case "&lt;":
-                letter.letter = "<"
-            case "&gt;":
-                letter.letter = ">"
+        map_special_keys_to_characters(letter)
         if letter.letter in _punctuations:
             handle_completed_punctuation(letter)
             continue

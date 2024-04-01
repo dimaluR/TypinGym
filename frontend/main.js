@@ -26,9 +26,9 @@ let currentStats = {
 };
 
 let _config = {
-    capitalize_freq: 100,
-    surround_freq: 100,
-    punctuation_freq: 100,
+    capitalize_freq: 0,
+    surround_freq: 0,
+    punctuation_freq: 0,
 };
 
 // main function
@@ -37,31 +37,21 @@ await main();
 // sliders
 const sp = document.getElementById("sp");
 const menu = document.getElementById("menu");
-
-const capitalFreqInput = document.getElementById("capitalFreqInput");
-capitalFreqInput.value = _config.capitalize_freq;
-const surroundFreqInput = document.getElementById("surroundFreqInput");
-surroundFreqInput.value = _config.surround_freq;
-const punctuationFreqInput = document.getElementById("punctuationFreqInput");
-punctuationFreqInput.value = _config.punctuation_freq;
-
-capitalFreqInput.oninput = async function () {
-    _config.capitalize_freq = this.value;
-    console.log(`updating capitalize freq with ${this.value}`);
-    await updateConfig()
-};
-
-punctuationFreqInput.oninput = async function () {
-    _config.punctuation_freq = this.value;
-    console.log(`updating capitalize freq with ${this.value}`);
-    await updateConfig()
+function initSliderElement(sliderElementId, textElementId, updateValue) {
+    const sliderElement = document.getElementById(sliderElementId);
+    sliderElement.value = _config[updateValue];
+    const textElement = document.getElementById(textElementId);
+    textElement.innerText = _config[updateValue];
+    sliderElement.oninput = async function () {
+        textElement.innerText = this.value;
+        _config[updateValue] = this.value;
+        console.log(`updating capitalize freq with ${this.value}`);
+        await updateConfig();
+    };
 }
-
-surroundFreqInput.oninput = async function () {
-    _config.surround_freq = this.value;
-    console.log(`updating surround freq with ${this.value}`);
-    await updateConfig()
-}
+initSliderElement("capitalFreqSlider", "capitalFreqValue", "capitalize_freq")
+initSliderElement("surroundFreqSlider", "surroundFreqValue", "surround_freq")
+initSliderElement("punctuationFreqSlider", "punctuationFreqValue", "punctuation_freq")
 //
 content.onmouseover = function () {
     content.style.cursor = "none";
@@ -81,6 +71,7 @@ content.onmouseleave = function () {
     menu.style.opacity = 1;
     menu.style.transition = "opacity .2s";
 };
+
 async function handleKeyDownEvent(event) {
     {
         if (MODIFIER_KEYS.includes(event.key)) {
@@ -327,7 +318,6 @@ async function sendWordCompletedStatus(wordIndex) {
         console.error(`failed to send word completed update.`);
     }
 }
-
 
 async function updateConfig() {
     const route = "config/";
