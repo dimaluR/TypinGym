@@ -13,9 +13,6 @@ make install-dependencies
 # to run the servers
 make run
 ```
-# to start your training
-[GutenType](http://localhost:5173)
-
 ## Installation
 
 To install the necessary dependencies for both the backend and frontend, follow these steps:
