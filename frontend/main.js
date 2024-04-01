@@ -39,13 +39,15 @@ const sp = document.getElementById("sp");
 const menu = document.getElementById("menu");
 function initSliderElement(sliderElementId, textElementId, updateValue) {
     const sliderElement = document.getElementById(sliderElementId);
-    sliderElement.value = _config[updateValue];
-    const textElement = document.getElementById(textElementId);
-    textElement.innerText = _config[updateValue];
+    sliderElement.value = _config[updateValue] > 0 ? 11 - _config[updateValue] : 0;
+    // const textElement = document.getElementById(textElementId);
+    // textElement.innerText = _config[updateValue];
     sliderElement.oninput = async function () {
-        textElement.innerText = this.value;
-        _config[updateValue] = this.value;
-        console.log(`updating capitalize freq with ${this.value}`);
+        const sliderValue = this.value > 0 ? 11 - this.value : 0 ;
+
+        // textElement.innerText = (0.1 * this.value).toFixed(1);
+        _config[updateValue] = sliderValue;
+        console.log(`updating capitalize freq with ${_config[updateValue]}`);
         await updateConfig();
     };
 }
@@ -165,6 +167,7 @@ async function updateContentIfNeeded(keyDownEvent) {
 }
 async function main() {
     content.focus();
+    await getConfig()
     await init();
     content.addEventListener("keydown", handleKeyDownEvent);
 }
@@ -316,6 +319,16 @@ async function sendWordCompletedStatus(wordIndex) {
         await sendRequestToBackend(route, "POST", data);
     } catch (error) {
         console.error(`failed to send word completed update.`);
+    }
+}
+
+async function getConfig() {
+    const route = "config/"; 
+    try {
+        _config = await sendRequestToBackend(route);
+        console.log(`config=${JSON.stringify(_config)}`)
+    } catch (error) {
+        console.error(`could not send updated configuration.`);
     }
 }
 

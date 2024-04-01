@@ -243,7 +243,8 @@ def get_words(n: int) -> list[str]:
 
 
 @app.get("/config")
-def get_config():
+def get_config() -> dict:
+    logging.info("got request for config")
     return _config
 
 
