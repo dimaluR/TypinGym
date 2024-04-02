@@ -39,11 +39,12 @@ const sp = document.getElementById("sp");
 const menu = document.getElementById("menu");
 function initSliderElement(sliderElementId, textElementId, updateValue) {
     const sliderElement = document.getElementById(sliderElementId);
-    sliderElement.value = _config[updateValue] > 0 ? 11 - _config[updateValue] : 0;
+    sliderElement.value =
+        _config[updateValue] > 0 ? 11 - _config[updateValue] : 0;
     // const textElement = document.getElementById(textElementId);
     // textElement.innerText = _config[updateValue];
     sliderElement.oninput = async function () {
-        const sliderValue = this.value > 0 ? 11 - this.value : 0 ;
+        const sliderValue = this.value > 0 ? 11 - this.value : 0;
 
         // textElement.innerText = (0.1 * this.value).toFixed(1);
         _config[updateValue] = sliderValue;
@@ -51,13 +52,17 @@ function initSliderElement(sliderElementId, textElementId, updateValue) {
         await updateConfig();
     };
 }
-initSliderElement("capitalFreqSlider", "capitalFreqValue", "capitalize_freq")
-initSliderElement("surroundFreqSlider", "surroundFreqValue", "surround_freq")
-initSliderElement("punctuationFreqSlider", "punctuationFreqValue", "punctuation_freq")
+initSliderElement("capitalFreqSlider", "capitalFreqValue", "capitalize_freq");
+initSliderElement("surroundFreqSlider", "surroundFreqValue", "surround_freq");
+initSliderElement(
+    "punctuationFreqSlider",
+    "punctuationFreqValue",
+    "punctuation_freq",
+);
 //
 content.onmouseover = function () {
     content.style.cursor = "none";
-    content.classList.remove("blur");
+    // content.classList.remove("blur");
     sp.style.opacity = 0;
     sp.style.transition = "opacity .2s";
 
@@ -66,7 +71,7 @@ content.onmouseover = function () {
 };
 
 content.onmouseleave = function () {
-    content.classList.add("blur");
+    // content.classList.add("blur");
     sp.style.opacity = 1;
     sp.style.transition = "opacity .2s";
 
@@ -74,8 +79,13 @@ content.onmouseleave = function () {
     menu.style.transition = "opacity .2s";
 };
 
+function clearTypedClassesFromLetter(letter) {
+    letter.classList.remove("correct", "incorrect", "typed");
+}
+
 async function handleKeyDownEvent(event) {
     {
+        clearTypedClassesFromLetter(currentLetter);
         if (MODIFIER_KEYS.includes(event.key)) {
             if (event.key === "Escape") {
                 await init();
@@ -86,7 +96,6 @@ async function handleKeyDownEvent(event) {
             updateActiveElements();
             letterTimeStart = Date.now();
 
-            currentLetter.classList.remove("correct", "incorrect", "typed");
             currentLetter.classList.add("backtrack");
             cursor--;
             if (
@@ -110,6 +119,8 @@ async function handleKeyDownEvent(event) {
                 currentLetter.classList.add("correct");
             } else {
                 currentLetter.classList.add("incorrect", "miss");
+                currentWord.classList.add("miss");
+                currentWord.nextElementSibling.classList.add("blur");
             }
             currentLetter.duration = Date.now() - letterTimeStart;
             letterTimeStart = Date.now();
@@ -130,11 +141,22 @@ async function handleKeyDownEvent(event) {
 async function onLetterCompleted() {
     if (
         currentLetterIndex === currentWord.children.length - 1 &&
-        !currentWord.classList.contains("spacer") &&
         cursor === maxCursor
     ) {
-        await sendWordCompletedStatus(currentWordIndex);
-        await updateStats();
+        if (currentWord.classList.contains("miss")) {
+            currentLetterIndex = 0;
+            cursor -= currentWord.children.length - 1;
+            currentWord.classList.remove("miss");
+            for (const letter of currentWord.children) {
+                clearTypedClassesFromLetter(letter);
+            }
+            currentWord.nextElementSibling.classList.remove("blur");
+            updateActiveElements();
+            return;
+        } else {
+            await sendWordCompletedStatus(currentWordIndex);
+            await updateStats();
+        }
     }
     setCurrentIndexesToNextLetter();
     updateActiveElements();
@@ -167,7 +189,7 @@ async function updateContentIfNeeded(keyDownEvent) {
 }
 async function main() {
     content.focus();
-    await getConfig()
+    await getConfig();
     await init();
     content.addEventListener("keydown", handleKeyDownEvent);
 }
@@ -323,10 +345,10 @@ async function sendWordCompletedStatus(wordIndex) {
 }
 
 async function getConfig() {
-    const route = "config/"; 
+    const route = "config/";
     try {
         _config = await sendRequestToBackend(route);
-        console.log(`config=${JSON.stringify(_config)}`)
+        console.log(`config=${JSON.stringify(_config)}`);
     } catch (error) {
         console.error(`could not send updated configuration.`);
     }
