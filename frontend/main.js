@@ -121,6 +121,7 @@ async function handleKeyDownEvent(event) {
                 currentLetter.classList.add("incorrect", "miss");
                 currentWord.classList.add("miss");
                 currentWord.nextElementSibling.classList.add("blur");
+                currentWord.lastElementChild.textContent = "↰";
             }
             currentLetter.duration = Date.now() - letterTimeStart;
             letterTimeStart = Date.now();
@@ -151,6 +152,7 @@ async function onLetterCompleted() {
                 clearTypedClassesFromLetter(letter);
             }
             currentWord.nextElementSibling.classList.remove("blur");
+            currentWord.lastElementChild.textContent = SPACER_CHAR;
             updateActiveElements();
             return;
         } else {
