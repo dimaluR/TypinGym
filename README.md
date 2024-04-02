@@ -1,4 +1,4 @@
-# GutenType
+# TypinGym
 Not Yet Another Static Touch Typing Gym
 
 learns your error patterns to provide you with intelligent suggestions.
