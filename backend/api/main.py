@@ -26,6 +26,8 @@ _config = {
     "capitalize_freq": 0,
     "surround_freq": 0,
     "punctuation_freq": 0,
+    "force_retype": False,
+    "stop_on_word": False,
 }
 SURROUNDS = [("(", ")"), ("[", "]"), ("{", "}"), ("<", ">"), ("</", ">"), ('"', '"'), ("'", "'")]
 

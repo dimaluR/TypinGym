@@ -190,6 +190,21 @@ a:hover {
     }
 }
 
+.checkboxcontainer {
+    display: grid;
+    grid-template-areas:
+        "checkbox text";
+    grid-template-columns: min-content auto;
+    align-items: center;
+}
+
+.checkbox {
+    grid-area: checkbox;
+}
+
+.checkboxcontainer > .text {
+    grid-area: text
+}
 .slidecontainer {
     display: grid;
     grid-template-areas:

@@ -25,11 +25,7 @@ let currentStats = {
     wpm: 0,
 };
 
-let _config = {
-    capitalize_freq: 0,
-    surround_freq: 0,
-    punctuation_freq: 0,
-};
+let _config = {};
 
 // main function
 await main();
@@ -37,6 +33,10 @@ await main();
 // sliders
 const sp = document.getElementById("sp");
 const menu = document.getElementById("menu");
+
+const forcRetypeCheckBox = document.getElementById("force_retype_checkbox");
+const stopOnWordCheckBox = document.getElementById("stop_on_word_checkbox");
+
 function initSliderElement(sliderElementId, textElementId, updateValue) {
     const sliderElement = document.getElementById(sliderElementId);
     sliderElement.value =
@@ -119,9 +119,11 @@ async function handleKeyDownEvent(event) {
                 currentLetter.classList.add("correct");
             } else {
                 currentLetter.classList.add("incorrect", "miss");
-                currentWord.classList.add("miss");
-                currentWord.nextElementSibling.classList.add("blur");
-                currentWord.lastElementChild.textContent = "↰";
+                if (forcRetypeCheckBox.checked) {
+                    currentWord.classList.add("miss");
+                    currentWord.nextElementSibling.classList.add("blur");
+                    currentWord.lastElementChild.textContent = "↰";
+                }
             }
             currentLetter.duration = Date.now() - letterTimeStart;
             letterTimeStart = Date.now();
@@ -349,8 +351,10 @@ async function sendWordCompletedStatus(wordIndex) {
 async function getConfig() {
     const route = "config/";
     try {
-        _config = await sendRequestToBackend(route);
-        console.log(`config=${JSON.stringify(_config)}`);
+        const config = await sendRequestToBackend(route);
+        for (const [key, value] of Object.entries(config)) {
+            _config[key] = value;
+        }
     } catch (error) {
         console.error(`could not send updated configuration.`);
     }
