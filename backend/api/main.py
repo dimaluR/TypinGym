@@ -1,6 +1,5 @@
 import logging
 import math
-from string import ascii_lowercase, punctuation
 import random
 from collections import defaultdict
 from pathlib import Path
@@ -11,7 +10,6 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from dataclasses import dataclass
 
 logging.basicConfig(level=logging.INFO)
 GUTNEBER_PATH = Path.cwd()
@@ -25,9 +23,9 @@ DURATION_MOVING_AVERAGE_NUM = 50
 _wpm = 0
 
 _config = {
-    "capitalize_freq": 100,
-    "surround_freq": 100,
-    "punctuation_freq": 100,
+    "capitalize_freq": 0,
+    "surround_freq": 0,
+    "punctuation_freq": 0,
 }
 SURROUNDS = [("(", ")"), ("[", "]"), ("{", "}"), ("<", ">"), ("</", ">"), ('"', '"'), ("'", "'")]
 
@@ -127,9 +125,9 @@ class LetterStats:
         }
 
 
-_letters: dict[str, LetterStats] = {char: LetterStats(char) for char in ascii_lowercase}
-_letter_by_occurances = dict.fromkeys(ascii_lowercase, 0)
-_letter_by_error_freq = dict.fromkeys(ascii_lowercase, 0)
+_letters: dict[str, LetterStats] = {char: LetterStats(char) for char in string.ascii_lowercase}
+_letter_by_occurances = dict.fromkeys(string.ascii_lowercase, 0)
+_letter_by_error_freq = dict.fromkeys(string.ascii_lowercase, 0)
 
 
 def update_letter_by_occurance(char: str):
