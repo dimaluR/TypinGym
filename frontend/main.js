@@ -10,6 +10,7 @@ const content = document.getElementById("content");
 // cursor keeps track of the furthest position reached.
 let cursor = 0;
 let maxCursor = 0;
+let maxWord = 0;
 
 // track the current active text elements
 let currentWord;
@@ -119,7 +120,7 @@ async function handleKeyDownEvent(event) {
                 currentLetter.classList.add("correct");
             } else {
                 currentLetter.classList.add("incorrect", "miss");
-                if (forcRetypeCheckBox.checked) {
+                if (forcRetypeCheckBox.checked && currentWordIndex == maxWord) {
                     currentWord.classList.add("miss");
                     currentWord.nextElementSibling.classList.add("blur");
                     currentWord.lastElementChild.textContent = "↰";
@@ -176,6 +177,7 @@ async function onLetterCompleted() {
 
 function incrementMaxCursorIfNeeded(cursor) {
     maxCursor = cursor === maxCursor ? maxCursor + 1 : maxCursor;
+    maxWord = Math.max(maxWord, currentWordIndex);
 }
 
 async function updateContentIfNeeded(keyDownEvent) {
