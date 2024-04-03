@@ -22,7 +22,7 @@ a:hover {
     --colorful-error-color: #f28fad;
     --colorful-error-extra-color: #e8a2af;
     --miss-color: #ecd444;
-    --active-color: #736C89;
+    --active-color: #736c89;
 }
 
 #stats-page {
@@ -131,9 +131,9 @@ a:hover {
 
 .letter.active {
     font-weight: 600;
-    font-size:1.05rem;
+    font-size: 1.05rem;
     text-decoration: underline;
-    color:var(--active-color)
+    color: var(--active-color);
 }
 
 .typed {
@@ -192,8 +192,7 @@ a:hover {
 
 .checkboxcontainer {
     display: grid;
-    grid-template-areas:
-        "checkbox text";
+    grid-template-areas: "checkbox text";
     grid-template-columns: min-content auto;
     align-items: center;
 }
@@ -203,7 +202,7 @@ a:hover {
 }
 
 .checkboxcontainer > .text {
-    grid-area: text
+    grid-area: text;
 }
 .slidecontainer {
     display: grid;
@@ -255,4 +254,14 @@ a:hover {
 
 .blur {
     filter: blur(5px);
+}
+
+.fix {
+    animation: blink 0.1s 2;
+}
+
+@keyframes blink {
+    50% {
+        opacity: 0;
+    }
 }

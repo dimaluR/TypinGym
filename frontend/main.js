@@ -1,6 +1,7 @@
 import sendRequestToBackend from "./backend_gateway.js";
 
 const SPACER_CHAR = "\u00a0";
+const RETYPE_CHAR =  "↰";
 const INITIAL_WORD_COUND = 16;
 const TOTAL_WORDS_ON_UPDATE = 8;
 const MODIFIER_KEYS = ["Control", "Alt", "Shift", "Meta", "Tab", "Escape"];
@@ -109,13 +110,14 @@ async function handleKeyDownEvent(event) {
             }
         } else {
             // update backend when word is completed typing
+            Array.from(currentWord.children).forEach((letter) => letter.classList.remove("fix"))
             currentLetter.classList.add("typed");
             console.log(
                 `${currentLetter.textContent}, ${currentLetter.innerText}`,
             );
             if (
                 event.key === currentLetter.textContent ||
-                (event.key === " " && currentLetter.textContent === SPACER_CHAR)
+                (event.key === " " && [SPACER_CHAR, RETYPE_CHAR].includes(currentLetter.textContent))
             ) {
                 currentLetter.classList.add("correct");
             } else {
@@ -123,11 +125,14 @@ async function handleKeyDownEvent(event) {
                 if (forcRetypeCheckBox.checked && currentWordIndex == maxWord) {
                     currentWord.classList.add("miss");
                     currentWord.nextElementSibling.classList.add("blur");
-                    currentWord.lastElementChild.textContent = "↰";
+                    currentWord.lastElementChild.textContent = RETYPE_CHAR;
                 }
             }
             currentLetter.duration = Date.now() - letterTimeStart;
             letterTimeStart = Date.now();
+            console.log(
+                `current letter ${currentLetter.textContent} time start: ${letterTimeStart}`,
+            );
 
             //handle last letter of word.
             console.log(
@@ -142,11 +147,32 @@ async function handleKeyDownEvent(event) {
         await updateContentIfNeeded(event);
     }
 }
+const shouldStopOnWord = (wordElement) => {
+    return Array.from(wordElement.children).reduce((a, b) => {
+        return a || b.classList.contains("incorrect");
+    }, false);
+};
+
 async function onLetterCompleted() {
+    if (stopOnWordCheckBox.checked && shouldStopOnWord(currentWord)) {
+            currentWord.classList.add("incorrect-word");
+            currentWord.lastChild.classList.add("stop-on-word")
+        } else {
+            currentWord.classList.remove("incorrect-word");
+            currentWord.lastChild.classList.remove("stop-on-word")
+        }
     if (
         currentLetterIndex === currentWord.children.length - 1 &&
         cursor === maxCursor
     ) {
+        if (currentWord.classList.contains("incorrect-word")){
+            for(const letter of currentWord.children){
+                if (letter.classList.contains("incorrect")) {
+                    letter.classList.add("fix")
+                }
+            }
+            return
+        }
         if (currentWord.classList.contains("miss")) {
             currentLetterIndex = 0;
             cursor -= currentWord.children.length - 1;
