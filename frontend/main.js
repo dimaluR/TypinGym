@@ -1,7 +1,7 @@
 import sendRequestToBackend from "./backend_gateway.js";
 
 const SPACER_CHAR = "\u00a0";
-const RETYPE_CHAR =  "↰";
+const RETYPE_CHAR = "↰";
 const INITIAL_WORD_COUND = 16;
 const TOTAL_WORDS_ON_UPDATE = 8;
 const MODIFIER_KEYS = ["Control", "Alt", "Shift", "Meta", "Tab", "Escape"];
@@ -36,19 +36,31 @@ await main();
 const sp = document.getElementById("sp");
 const menu = document.getElementById("menu");
 
-const forcRetypeCheckBox = document.getElementById("force_retype_checkbox");
-const stopOnWordCheckBox = document.getElementById("stop_on_word_checkbox");
+function initCheckboxInput(checkboxElementId, updateValue) {
+    const checkboxElement = document.getElementById(checkboxElementId);
+    checkboxElement.checked = _config[updateValue];
+    checkboxElement.oninput = async function () {
+        console.log(`updating ${checkboxElementId} value with ${this.checked}`);
+        _config[updateValue] = this.checked;
+        await updateConfig();
+    };
+    return checkboxElement;
+}
 
-function initSliderElement(sliderElementId, textElementId, updateValue) {
+const forceRetypeCheckbox = initCheckboxInput(
+    "force_retype_checkbox",
+    "force_retype",
+);
+const stopOnWordCheckBox = initCheckboxInput(
+    "stop_on_word_checkbox",
+    "stop_on_word",
+);
+function initSliderElement(sliderElementId, updateValue) {
     const sliderElement = document.getElementById(sliderElementId);
     sliderElement.value =
         _config[updateValue] > 0 ? 11 - _config[updateValue] : 0;
-    // const textElement = document.getElementById(textElementId);
-    // textElement.innerText = _config[updateValue];
     sliderElement.oninput = async function () {
         const sliderValue = this.value > 0 ? 11 - this.value : 0;
-
-        // textElement.innerText = (0.1 * this.value).toFixed(1);
         _config[updateValue] = sliderValue;
         console.log(`updating capitalize freq with ${_config[updateValue]}`);
         await updateConfig();
@@ -110,19 +122,27 @@ async function handleKeyDownEvent(event) {
             }
         } else {
             // update backend when word is completed typing
-            Array.from(currentWord.children).forEach((letter) => letter.classList.remove("fix"))
+            Array.from(currentWord.children).forEach((letter) =>
+                letter.classList.remove("fix"),
+            );
             currentLetter.classList.add("typed");
             console.log(
                 `${currentLetter.textContent}, ${currentLetter.innerText}`,
             );
             if (
                 event.key === currentLetter.textContent ||
-                (event.key === " " && [SPACER_CHAR, RETYPE_CHAR].includes(currentLetter.textContent))
+                (event.key === " " &&
+                    [SPACER_CHAR, RETYPE_CHAR].includes(
+                        currentLetter.textContent,
+                    ))
             ) {
                 currentLetter.classList.add("correct");
             } else {
                 currentLetter.classList.add("incorrect", "miss");
-                if (forcRetypeCheckBox.checked && currentWordIndex == maxWord) {
+                if (
+                    forceRetypeCheckbox.checked &&
+                    currentWordIndex == maxWord
+                ) {
                     currentWord.classList.add("miss");
                     currentWord.nextElementSibling.classList.add("blur");
                     currentWord.lastElementChild.textContent = RETYPE_CHAR;
@@ -155,23 +175,23 @@ const shouldStopOnWord = (wordElement) => {
 
 async function onLetterCompleted() {
     if (stopOnWordCheckBox.checked && shouldStopOnWord(currentWord)) {
-            currentWord.classList.add("incorrect-word");
-            currentWord.lastChild.classList.add("stop-on-word")
-        } else {
-            currentWord.classList.remove("incorrect-word");
-            currentWord.lastChild.classList.remove("stop-on-word")
-        }
+        currentWord.classList.add("incorrect-word");
+        currentWord.lastChild.classList.add("stop-on-word");
+    } else {
+        currentWord.classList.remove("incorrect-word");
+        currentWord.lastChild.classList.remove("stop-on-word");
+    }
     if (
         currentLetterIndex === currentWord.children.length - 1 &&
         cursor === maxCursor
     ) {
-        if (currentWord.classList.contains("incorrect-word")){
-            for(const letter of currentWord.children){
+        if (currentWord.classList.contains("incorrect-word")) {
+            for (const letter of currentWord.children) {
                 if (letter.classList.contains("incorrect")) {
-                    letter.classList.add("fix")
+                    letter.classList.add("fix");
                 }
             }
-            return
+            return;
         }
         if (currentWord.classList.contains("miss")) {
             currentLetterIndex = 0;
