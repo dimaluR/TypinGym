@@ -66,13 +66,10 @@ function initSliderElement(sliderElementId, updateValue) {
         await updateConfig();
     };
 }
-initSliderElement("capitalFreqSlider", "capitalFreqValue", "capitalize_freq");
-initSliderElement("surroundFreqSlider", "surroundFreqValue", "surround_freq");
-initSliderElement(
-    "punctuationFreqSlider",
-    "punctuationFreqValue",
-    "punctuation_freq",
-);
+initSliderElement("capitalFreqSlider", "capitalize_freq");
+initSliderElement("surroundFreqSlider", "surround_freq");
+initSliderElement("punctuationFreqSlider", "punctuation_freq");
+initSliderElement("maxWordLengthSlider", "max_word_length");
 //
 content.onmouseover = function () {
     content.style.cursor = "none";

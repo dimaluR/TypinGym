@@ -28,6 +28,7 @@ _config = {
     "punctuation_freq": 0,
     "force_retype": False,
     "stop_on_word": False,
+    "max_word_length": 6,
 }
 SURROUNDS = [("(", ")"), ("[", "]"), ("{", "}"), ("<", ">"), ("</", ">"), ('"', '"'), ("'", "'")]
 
@@ -65,6 +66,15 @@ _words_by_lead = defaultdict(list)
 _words_by_len = defaultdict(list)
 _words_by_letter = defaultdict(list)
 _missed = set()
+
+
+def clear_words():
+    global _word_list, _words_by_lead, _words_by_len, _words_by_letter
+    _word_list = []
+    _words_by_lead = defaultdict(list)
+    _words_by_len = defaultdict(list)
+    _words_by_letter = defaultdict(list)
+
 
 _punctuations = {
     p: {
@@ -146,13 +156,17 @@ def update_letter_by_error_freq(char: str):
 
 def fill_words():
     with DICT_ENG_5K.open("r") as f:
+        clear_words()
         for _word in f.readlines():
             word = _word.strip("\n").lower()
+            if len(word) > _config["max_word_length"]:
+                continue
             _word_list.append(word)
             _words_by_lead[word[0]].append(word)
             _words_by_len[len(word)].append(word)
             for letter in _word:
                 _words_by_letter[letter].append(word)
+    logging.info(f"{_config=}")
 
 
 def get_random_word():
@@ -253,6 +267,10 @@ def post_config(data: dict[str, int]):
     for key, value in data.items():
         logging.info(f"setting config: [{key}]: {value}")
         _config.update({key: value})
+        match key:
+            case "max_word_length":
+                logging.info(f"getting new words on len <= {value}")
+                fill_words()
 
 
 @app.post("/word/incorrect")
