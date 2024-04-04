@@ -1,7 +1,6 @@
-const BACKEND_PROTO = "http";
-const BACKEND_HOST = "127.0.0.1";
-const BACKEND_PORT = 5007;
-const backendUrl = `${BACKEND_PROTO}://${BACKEND_HOST}:${BACKEND_PORT}`;
+const BACKEND_PROTO = "https";
+const BACKEND_HOST = "typingym-85269.web.app";
+const backendUrl = `${BACKEND_PROTO}://${BACKEND_HOST}`;
 
 export default async function sendRequestToBackend(route, method = "GET", data = null) {
     const requestOptions = {

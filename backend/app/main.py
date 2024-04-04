@@ -1,21 +1,19 @@
 import logging
 import math
+import pathlib
 import random
 from collections import defaultdict
-from pathlib import Path
 import statistics
 import string
 from typing import Callable
 import uvicorn
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
+basedir = pathlib.Path(__file__).parents[1]
 logging.basicConfig(level=logging.INFO)
-GUTNEBER_PATH = Path.cwd()
-DICT_ENG_1K = GUTNEBER_PATH / "backend/api/dict/english1k.txt"
-assert DICT_ENG_1K.exists()
-DICT_ENG_5K = GUTNEBER_PATH / "backend/api/dict/english5k.txt"
+DICT_ENG_5K = basedir / "app/dict/english5k.txt"
 assert DICT_ENG_5K.exists()
 
 MAX_ALLOWED_LETTER_DURATION = 1 / (20 * 5.1 / 60000)  # equivalent to 20 WPM
@@ -52,7 +50,6 @@ class CompletedWordData(BaseModel):
 app = FastAPI()
 
 origins = ["*"]
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -60,6 +57,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 _word_list = []
 _words_by_lead = defaultdict(list)
@@ -197,6 +195,11 @@ def freq_error_letters(num_words, words_per_letter=1):
         logging.info(f"{letter=}: {error_freq=}, {letter_words}")
         num_words -= min(words_per_letter, num_words)
     return words_to_add
+
+
+@app.get("/")
+def base():
+    return "welcome to the word engine... vroom!"
 
 
 @app.get("/word")

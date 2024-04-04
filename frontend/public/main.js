@@ -1,3 +1,4 @@
+// Initialize Firebase
 import sendRequestToBackend from "./backend_gateway.js";
 
 const SPACER_CHAR = "\u00a0";
@@ -202,8 +203,8 @@ async function onLetterCompleted() {
             updateActiveElements();
             return;
         } else {
-            await sendWordCompletedStatus(currentWordIndex);
-            await updateStats();
+            sendWordCompletedStatus(currentWordIndex);
+            updateStats();
         }
     }
     setCurrentIndexesToNextLetter();
@@ -216,6 +217,7 @@ async function onLetterCompleted() {
     }
     incrementMaxCursorIfNeeded(cursor);
     cursor++;
+
 }
 
 function incrementMaxCursorIfNeeded(cursor) {
@@ -366,7 +368,7 @@ async function getNewWordsByCount(wordCount) {
     }
 }
 
-async function sendWordCompletedStatus(wordIndex) {
+function sendWordCompletedStatus(wordIndex) {
     const route = `word/completed`;
     const word = content.children[wordIndex];
     const wordLettersData = [];
@@ -387,7 +389,7 @@ async function sendWordCompletedStatus(wordIndex) {
     };
     console.log(`complted: ${JSON.stringify(data)}`);
     try {
-        await sendRequestToBackend(route, "POST", data);
+        sendRequestToBackend(route, "POST", data);
     } catch (error) {
         console.error(`failed to send word completed update.`);
     }
@@ -408,7 +410,7 @@ async function getConfig() {
 async function updateConfig() {
     const route = "config/";
     try {
-        await sendRequestToBackend(route, "POST", _config);
+        sendRequestToBackend(route, "POST", _config);
     } catch (error) {
         console.error(`could not send updated configuration.`);
     }

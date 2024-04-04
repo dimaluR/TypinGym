@@ -3,6 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
         <link rel="stylesheet" href="./style.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -10,7 +11,15 @@
             href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
             rel="stylesheet"
         />
-        <title>GutenType</title>
+        <title>TypinGym</title>
+
+        <!-- update the version number as needed -->
+        <script defer src="/__/firebase/10.10.0/firebase-app-compat.js"></script>
+        <!-- 
+          initialize the SDK after all desired features are loaded, set useEmulator to false
+          to avoid connecting the SDK to running emulators.
+        -->
+        <script defer src="/__/firebase/init.js?useEmulator=true"></script>
     </head>
     <body>
         <div id="app">
@@ -103,6 +112,6 @@
                 <div id="spe"></div>
             </div>
         </div>
-        <script type="module" src="/main.js"></script>
+        <script type="module" src="main.js"></script>
     </body>
 </html>

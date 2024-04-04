@@ -1,0 +1,20 @@
+{
+    "hosting": {
+        "public": "public",
+        "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+        "rewrites": [
+            {
+                "source": "/",
+                "destination": "/index.html"
+            },
+            {
+                "source": "/**",
+                "run": {
+                    "serviceId": "typingym-api",
+                    "region": "us-west1",
+                    "pinTag": true
+                }
+            }
+        ]
+    }
+}
