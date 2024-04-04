@@ -48,6 +48,6 @@ make run
 ```
 
 other recommended touch typing sites I love:
-[monkeytype](https://monkeytype.com/): many modes, great progression tracking.
-[typing club](https://www.typingclub.com/): if you want to start somewhere, THE best place to learn touch typing.
-[nitrotypy](https://nitrotype.com): just pure fun, don't get addicted.
+* [monkeytype](https://monkeytype.com/): many modes, great progression tracking.
+* [typing club](https://www.typingclub.com/): if you want to start somewhere, THE best place to learn touch typing.
+* [nitrotypy](https://nitrotype.com): just pure fun, don't get addicted.
