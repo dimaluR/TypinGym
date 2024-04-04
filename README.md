@@ -3,7 +3,7 @@ Not Yet Another Static Touch Typing Gym
 
 learns your error patterns to provide you with intelligent suggestions.
 
-**this is still a work in progress, so dont expect things to stay the same. and yes, its full of bugs and bad code :) **
+**this is still a work in progress, so dont expect things to stay the same. and yes, its full of bugs and bad code :)**
 
 **only supports localhost running for now**
 
