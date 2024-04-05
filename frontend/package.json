@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "firebase": "^10.10.0",
+"firebase-functions": "^4.9.0",
     "plotly.js-dist-min": "^2.30.1"
   }
 }

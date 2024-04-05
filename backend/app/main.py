@@ -1,3 +1,4 @@
+import ssl
 import logging
 import math
 import pathlib
@@ -345,4 +346,6 @@ def _init():
 _init()
 
 if __name__ == "__main__":
-    uvicorn.run(app, port=5007)
+    ssl_path = basedir / ".ssl"
+    assert ssl_path.exists()
+    uvicorn.run(app, port=5007, ssl_keyfile=ssl_path / "key.pem", ssl_certfile=ssl_path / "cert.pem")

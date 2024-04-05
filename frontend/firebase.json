@@ -16,5 +16,17 @@
                 }
             }
         ]
+    },
+    "emulators": {
+        "hosting": {
+            "port": 5002
+        },
+        "typingym-api": {
+            "port": 5007
+        },
+        "ui": {
+            "enabled": true
+        },
+        "singleProjectMode": true
     }
 }
