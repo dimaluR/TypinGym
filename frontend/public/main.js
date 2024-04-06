@@ -28,7 +28,7 @@ let currentStats = {
 let _config = {};
 
 // main function
-await main();
+main();
 
 // sliders
 const sp = document.getElementById("sp");
@@ -41,12 +41,11 @@ function initCheckboxInput(checkboxElementId, updateValue) {
         console.log(`updating ${checkboxElementId} value with ${this.checked}`);
         _config[updateValue] = this.checked;
         await updateConfig();
+        resetWordsInContent();
     };
     return checkboxElement;
 }
 
-const forceRetypeCheckbox = initCheckboxInput("force_retype_checkbox", "force_retype");
-const stopOnWordCheckBox = initCheckboxInput("stop_on_word_checkbox", "stop_on_word");
 function initSliderElement(sliderElementId, updateValue) {
     const sliderElement = document.getElementById(sliderElementId);
     sliderElement.value = _config[updateValue] > 0 ? 11 - _config[updateValue] : 0;
@@ -55,8 +54,12 @@ function initSliderElement(sliderElementId, updateValue) {
         _config[updateValue] = sliderValue;
         console.log(`updating capitalize freq with ${_config[updateValue]}`);
         await updateConfig();
+        resetWordsInContent();
     };
 }
+
+const forceRetypeCheckbox = initCheckboxInput("force_retype_checkbox", "force_retype");
+const stopOnWordCheckBox = initCheckboxInput("stop_on_word_checkbox", "stop_on_word");
 initSliderElement("capitalFreqSlider", "capitalize_freq");
 initSliderElement("surroundFreqSlider", "surround_freq");
 initSliderElement("punctuationFreqSlider", "punctuation_freq");
@@ -64,7 +67,6 @@ initSliderElement("maxWordLengthSlider", "max_word_length");
 //
 content.onmouseover = function () {
     content.style.cursor = "none";
-    // content.classList.remove("blur");
     sp.style.opacity = 0;
     sp.style.transition = "opacity .2s";
 
@@ -73,7 +75,6 @@ content.onmouseover = function () {
 };
 
 content.onmouseleave = function () {
-    // content.classList.add("blur");
     sp.style.opacity = 1;
     sp.style.transition = "opacity .2s";
 
@@ -90,7 +91,7 @@ async function handleKeyDownEvent(event) {
         clearTypedClassesFromLetter(currentLetter);
         if (MODIFIER_KEYS.includes(event.key)) {
             if (event.key === "Escape") {
-                await init();
+                resetWordsInContent();
             }
             console.log(`modifier key pressed: ${event.key}`);
         } else if (event.code === "Backspace") {
@@ -107,7 +108,6 @@ async function handleKeyDownEvent(event) {
                 scrollContentToCenterWord();
             }
         } else {
-            // update backend when word is completed typing
             Array.from(currentWord.children).forEach((letter) => letter.classList.remove("fix"));
             currentLetter.classList.add("typed");
             console.log(`${currentLetter.textContent}, ${currentLetter.innerText}`);
@@ -120,7 +120,6 @@ async function handleKeyDownEvent(event) {
                 currentLetter.classList.add("incorrect", "miss");
                 if (forceRetypeCheckbox.checked && currentWordIndex == maxWord) {
                     currentWord.classList.add("miss");
-                    currentWord.nextElementSibling.classList.add("blur");
                     currentWord.lastElementChild.textContent = RETYPE_CHAR;
                 }
             }
@@ -144,6 +143,9 @@ const shouldStopOnWord = (wordElement) => {
 };
 
 async function onLetterCompleted() {
+    if (currentLetterIndex === 0) {
+    wordTimeStart = Date.now();
+    }
     if (stopOnWordCheckBox.checked && shouldStopOnWord(currentWord)) {
         currentWord.classList.add("incorrect-word");
         currentWord.lastChild.classList.add("stop-on-word");
@@ -167,13 +169,12 @@ async function onLetterCompleted() {
             for (const letter of currentWord.children) {
                 clearTypedClassesFromLetter(letter);
             }
-            currentWord.nextElementSibling.classList.remove("blur");
             currentWord.lastElementChild.textContent = SPACER_CHAR;
             updateActiveElements();
             return;
         } else {
             sendWordCompletedStatus(currentWordIndex);
-            updateStats();
+            // updateStats();
         }
     }
     setCurrentIndexesToNextLetter();
@@ -191,7 +192,6 @@ function incrementMaxCursorIfNeeded(cursor) {
 }
 
 async function updateContentIfNeeded(keyDownEvent) {
-    console.log(`${currentWordIndex % TOTAL_WORDS_ON_UPDATE === 0}, ${currentLetterIndex}, ${cursor}, ${maxCursor}`);
     if (
         currentWordIndex % TOTAL_WORDS_ON_UPDATE === 0 &&
         currentLetterIndex === 0 &&
@@ -201,15 +201,14 @@ async function updateContentIfNeeded(keyDownEvent) {
         await addWordsToContent(TOTAL_WORDS_ON_UPDATE);
     }
 }
-async function main() {
+function main() {
     content.focus();
-    await getConfig();
-    await init();
+    getConfig();
+    resetWordsInContent();
     content.addEventListener("keydown", handleKeyDownEvent);
 }
 
-async function init() {
-    wordTimeStart = Date.now();
+async function resetWordsInContent() {
     content.innerHTML = "";
     currentWordIndex = 0;
     currentLetterIndex = 0;
@@ -376,5 +375,4 @@ async function updateConfig() {
     } catch (error) {
         console.error(`could not send updated configuration.`);
     }
-    await init();
 }
