@@ -174,11 +174,11 @@ async function onLetterCompleted() {
             updateActiveElements();
             return;
         } else {
-            await sendWordCompletedStatus(currentWordIndex);
+            sendWordCompletedStatus(currentWordIndex);
             // updateStats();
         }
     }
-    await setCurrentIndexesToNextLetter();
+    setCurrentIndexesToNextLetter();
     updateActiveElements();
     if (currentWord.offsetLeft === content.offsetLeft && currentLetterIndex === 0) {
         scrollContentToCenterWord();
