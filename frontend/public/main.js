@@ -41,20 +41,23 @@ function initCheckboxInput(checkboxElementId, updateValue) {
         console.log(`updating ${checkboxElementId} value with ${this.checked}`);
         _config[updateValue] = this.checked;
         await updateConfig();
-        resetWordsInContent();
+        await resetWordsInContent();
     };
     return checkboxElement;
 }
-
 function initSliderElement(sliderElementId, updateValue) {
     const sliderElement = document.getElementById(sliderElementId);
     sliderElement.value = _config[updateValue] > 0 ? 11 - _config[updateValue] : 0;
-    sliderElement.oninput = async function () {
-        const sliderValue = this.value > 0 ? 11 - this.value : 0;
-        _config[updateValue] = sliderValue;
-        console.log(`updating capitalize freq with ${_config[updateValue]}`);
-        await updateConfig();
-        resetWordsInContent();
+    let lastSliderUpdateTime = Date.now();
+    sliderElement.oninput = async (event) => {
+        const configSliderValue = event.target.value > 0 ? 11 - event.target.value : 0;
+        if (configSliderValue != _config[updateValue]) {
+            console.log(`upadating ${updateValue} with ${configSliderValue}, event target value ${event.target.value}`);
+            lastSliderUpdateTime = Date.now();
+            _config[updateValue] = configSliderValue;
+            await updateConfig();
+            await resetWordsInContent();
+        }
     };
 }
 
@@ -128,7 +131,6 @@ async function handleKeyDownEvent(event) {
             console.log(`current letter ${currentLetter.textContent} time start: ${letterTimeStart}`);
 
             //handle last letter of word.
-            console.log(`${currentWord.children.length}, ${currentLetterIndex}`);
             await onLetterCompleted();
         }
         console.log(`${event.key} (${event.code}), ${currentWordIndex}:${currentLetterIndex}, ${cursor}, ${maxCursor}`);
@@ -144,7 +146,7 @@ const shouldStopOnWord = (wordElement) => {
 
 async function onLetterCompleted() {
     if (currentLetterIndex === 0) {
-    wordTimeStart = Date.now();
+        wordTimeStart = Date.now();
     }
     if (stopOnWordCheckBox.checked && shouldStopOnWord(currentWord)) {
         currentWord.classList.add("incorrect-word");
@@ -173,7 +175,7 @@ async function onLetterCompleted() {
             updateActiveElements();
             return;
         } else {
-            sendWordCompletedStatus(currentWordIndex);
+            await sendWordCompletedStatus(currentWordIndex);
             // updateStats();
         }
     }
@@ -298,26 +300,6 @@ async function addWordsToContent(wordCount) {
     }
 }
 
-async function updateStats() {
-    try {
-        currentStats = await getUpdatedStats();
-    } catch (error) {
-        console.warn(`counld not update stats.`);
-    }
-    const wpmElement = document.getElementById("wpm");
-    wpmElement.innerText = currentStats.wpm;
-}
-
-async function getUpdatedStats() {
-    const route = `stats`;
-    try {
-        const stats = await sendRequestToBackend(route);
-        console.log(`stats update: ${stats}`);
-        return stats;
-    } catch (error) {
-        console.log(`could not update stats`);
-    }
-}
 async function getNewWordsByCount(wordCount) {
     const route = `words?n=${wordCount}`;
     try {
@@ -329,7 +311,7 @@ async function getNewWordsByCount(wordCount) {
     }
 }
 
-function sendWordCompletedStatus(wordIndex) {
+async function sendWordCompletedStatus(wordIndex) {
     const route = `word/completed`;
     const word = content.children[wordIndex];
     const wordLettersData = [];
@@ -350,16 +332,16 @@ function sendWordCompletedStatus(wordIndex) {
     };
     console.log(`complted: ${JSON.stringify(data)}`);
     try {
-        sendRequestToBackend(route, "POST", data);
+        await sendRequestToBackend(route, "POST", data);
     } catch (error) {
         console.error(`failed to send word completed update.`);
     }
 }
 
-async function getConfig() {
+function getConfig() {
     const route = "config/";
     try {
-        const config = await sendRequestToBackend(route);
+        const config = sendRequestToBackend(route);
         for (const [key, value] of Object.entries(config)) {
             _config[key] = value;
         }
@@ -371,7 +353,8 @@ async function getConfig() {
 async function updateConfig() {
     const route = "config/";
     try {
-        sendRequestToBackend(route, "POST", _config);
+        await sendRequestToBackend(route, "POST", _config);
+        console.log("got the result")
     } catch (error) {
         console.error(`could not send updated configuration.`);
     }
