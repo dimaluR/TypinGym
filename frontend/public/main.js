@@ -126,11 +126,7 @@ async function handleKeyDownEvent(event) {
                     currentWord.lastElementChild.textContent = RETYPE_CHAR;
                 }
             }
-            currentLetter.duration = Date.now() - letterTimeStart;
-            letterTimeStart = Date.now();
-            console.log(`current letter ${currentLetter.textContent} time start: ${letterTimeStart}`);
 
-            //handle last letter of word.
             await onLetterCompleted();
         }
         console.log(`${event.key} (${event.code}), ${currentWordIndex}:${currentLetterIndex}, ${cursor}, ${maxCursor}`);
@@ -145,6 +141,9 @@ const shouldStopOnWord = (wordElement) => {
 };
 
 async function onLetterCompleted() {
+    currentLetter.duration = Date.now() - letterTimeStart;
+    letterTimeStart = Date.now();
+    console.log(`current letter ${currentLetter.textContent} time start: ${letterTimeStart}`);
     if (currentLetterIndex === 0) {
         wordTimeStart = Date.now();
     }
@@ -179,7 +178,7 @@ async function onLetterCompleted() {
             // updateStats();
         }
     }
-    setCurrentIndexesToNextLetter();
+    await setCurrentIndexesToNextLetter();
     updateActiveElements();
     if (currentWord.offsetLeft === content.offsetLeft && currentLetterIndex === 0) {
         scrollContentToCenterWord();
@@ -238,7 +237,7 @@ function updateActiveElements() {
     currentWord.classList.add("active");
 }
 
-function setCurrentIndexesToNextLetter() {
+async function setCurrentIndexesToNextLetter() {
     currentLetterIndex++;
     if (currentLetterIndex >= currentWord.children.length) {
         currentLetterIndex = 0;
@@ -271,6 +270,7 @@ function createLetterElement(letter) {
     const letterElement = document.createElement("letter");
     letterElement.className = "letter";
     letterElement.textContent = letter;
+    letterElement.duration = 1;
     return letterElement;
 }
 
@@ -312,6 +312,7 @@ async function getNewWordsByCount(wordCount) {
 }
 
 async function sendWordCompletedStatus(wordIndex) {
+    console.log(`${wordIndex} started`);
     const route = `word/completed`;
     const word = content.children[wordIndex];
     const wordLettersData = [];
@@ -333,6 +334,7 @@ async function sendWordCompletedStatus(wordIndex) {
     console.log(`complted: ${JSON.stringify(data)}`);
     try {
         await sendRequestToBackend(route, "POST", data);
+        console.log(`${wordIndex} completed`);
     } catch (error) {
         console.error(`failed to send word completed update.`);
     }
@@ -354,7 +356,7 @@ async function updateConfig() {
     const route = "config/";
     try {
         await sendRequestToBackend(route, "POST", _config);
-        console.log("got the result")
+        console.log("got the result");
     } catch (error) {
         console.error(`could not send updated configuration.`);
     }
