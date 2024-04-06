@@ -1,4 +1,3 @@
-import ssl
 import logging
 import math
 import pathlib
@@ -11,6 +10,24 @@ import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+from queue import Queue
+from threading import Thread
+
+_word_queue = Queue()
+
+_wpm = 0
+
+
+def handle_queued_words():
+    while True:
+        word_data = _word_queue.get()
+        logging.info(f"word processor is handling: {word_data}")
+        handle_completed_word_data(word_data)
+        _word_queue.task_done()
+
+
+word_processor = Thread(target=handle_queued_words)
+word_processor.start()
 
 basedir = pathlib.Path(__file__).parents[1]
 logging.basicConfig(level=logging.INFO)
@@ -19,7 +36,6 @@ assert DICT_ENG_5K.exists()
 
 MAX_ALLOWED_LETTER_DURATION = 1 / (20 * 5.1 / 60000)  # equivalent to 20 WPM
 DURATION_MOVING_AVERAGE_NUM = 50
-_wpm = 0
 
 _config = {
     "capitalize_freq": 0,
@@ -311,8 +327,7 @@ def map_special_keys_to_characters(letter: LetterData):
             letter.letter = ">"
 
 
-@app.post("/word/completed")
-def post_completed_word_data(data: CompletedWordData) -> None:
+def handle_completed_word_data(data: CompletedWordData) -> None:
     update_wpm(data.word_count, data.duration)
     for letter in data.word_letters_data:
         char = letter.letter
@@ -327,6 +342,11 @@ def post_completed_word_data(data: CompletedWordData) -> None:
             _letters[char].add_miss()
         update_letter_by_occurance(char)
         update_letter_by_error_freq(char)
+
+
+@app.post("/word/completed")
+def post_completed_word_data(data: CompletedWordData) -> None:
+    _word_queue.put(data)
 
 
 @app.get("/stats")

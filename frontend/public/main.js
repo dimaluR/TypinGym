@@ -1,12 +1,9 @@
-// Initialize Firebase
 import sendRequestToBackend from "./backend_gateway.js";
-
 const SPACER_CHAR = "\u00a0";
 const RETYPE_CHAR = "↰";
 const INITIAL_WORD_COUND = 16;
 const TOTAL_WORDS_ON_UPDATE = 8;
 const MODIFIER_KEYS = ["Control", "Alt", "Shift", "Meta", "Tab", "Escape"];
-
 const content = document.getElementById("content");
 
 // cursor keeps track of the furthest position reached.
@@ -48,18 +45,11 @@ function initCheckboxInput(checkboxElementId, updateValue) {
     return checkboxElement;
 }
 
-const forceRetypeCheckbox = initCheckboxInput(
-    "force_retype_checkbox",
-    "force_retype",
-);
-const stopOnWordCheckBox = initCheckboxInput(
-    "stop_on_word_checkbox",
-    "stop_on_word",
-);
+const forceRetypeCheckbox = initCheckboxInput("force_retype_checkbox", "force_retype");
+const stopOnWordCheckBox = initCheckboxInput("stop_on_word_checkbox", "stop_on_word");
 function initSliderElement(sliderElementId, updateValue) {
     const sliderElement = document.getElementById(sliderElementId);
-    sliderElement.value =
-        _config[updateValue] > 0 ? 11 - _config[updateValue] : 0;
+    sliderElement.value = _config[updateValue] > 0 ? 11 - _config[updateValue] : 0;
     sliderElement.oninput = async function () {
         const sliderValue = this.value > 0 ? 11 - this.value : 0;
         _config[updateValue] = sliderValue;
@@ -111,36 +101,24 @@ async function handleKeyDownEvent(event) {
             currentLetter.classList.add("backtrack");
             cursor--;
             if (
-                currentWord.nextElementSibling.offsetLeft ===
-                    content.offsetLeft &&
-                currentLetter ===
-                    currentWord.children[currentWord.children.length - 1]
+                currentWord.nextElementSibling.offsetLeft === content.offsetLeft &&
+                currentLetter === currentWord.children[currentWord.children.length - 1]
             ) {
                 scrollContentToCenterWord();
             }
         } else {
             // update backend when word is completed typing
-            Array.from(currentWord.children).forEach((letter) =>
-                letter.classList.remove("fix"),
-            );
+            Array.from(currentWord.children).forEach((letter) => letter.classList.remove("fix"));
             currentLetter.classList.add("typed");
-            console.log(
-                `${currentLetter.textContent}, ${currentLetter.innerText}`,
-            );
+            console.log(`${currentLetter.textContent}, ${currentLetter.innerText}`);
             if (
                 event.key === currentLetter.textContent ||
-                (event.key === " " &&
-                    [SPACER_CHAR, RETYPE_CHAR].includes(
-                        currentLetter.textContent,
-                    ))
+                (event.key === " " && [SPACER_CHAR, RETYPE_CHAR].includes(currentLetter.textContent))
             ) {
                 currentLetter.classList.add("correct");
             } else {
                 currentLetter.classList.add("incorrect", "miss");
-                if (
-                    forceRetypeCheckbox.checked &&
-                    currentWordIndex == maxWord
-                ) {
+                if (forceRetypeCheckbox.checked && currentWordIndex == maxWord) {
                     currentWord.classList.add("miss");
                     currentWord.nextElementSibling.classList.add("blur");
                     currentWord.lastElementChild.textContent = RETYPE_CHAR;
@@ -148,19 +126,13 @@ async function handleKeyDownEvent(event) {
             }
             currentLetter.duration = Date.now() - letterTimeStart;
             letterTimeStart = Date.now();
-            console.log(
-                `current letter ${currentLetter.textContent} time start: ${letterTimeStart}`,
-            );
+            console.log(`current letter ${currentLetter.textContent} time start: ${letterTimeStart}`);
 
             //handle last letter of word.
-            console.log(
-                `${currentWord.children.length}, ${currentLetterIndex}`,
-            );
+            console.log(`${currentWord.children.length}, ${currentLetterIndex}`);
             await onLetterCompleted();
         }
-        console.log(
-            `${event.key} (${event.code}), ${currentWordIndex}:${currentLetterIndex}, ${cursor}, ${maxCursor}`,
-        );
+        console.log(`${event.key} (${event.code}), ${currentWordIndex}:${currentLetterIndex}, ${cursor}, ${maxCursor}`);
 
         await updateContentIfNeeded(event);
     }
@@ -179,10 +151,7 @@ async function onLetterCompleted() {
         currentWord.classList.remove("incorrect-word");
         currentWord.lastChild.classList.remove("stop-on-word");
     }
-    if (
-        currentLetterIndex === currentWord.children.length - 1 &&
-        cursor === maxCursor
-    ) {
+    if (currentLetterIndex === currentWord.children.length - 1 && cursor === maxCursor) {
         if (currentWord.classList.contains("incorrect-word")) {
             for (const letter of currentWord.children) {
                 if (letter.classList.contains("incorrect")) {
@@ -209,15 +178,11 @@ async function onLetterCompleted() {
     }
     setCurrentIndexesToNextLetter();
     updateActiveElements();
-    if (
-        currentWord.offsetLeft === content.offsetLeft &&
-        currentLetterIndex === 0
-    ) {
+    if (currentWord.offsetLeft === content.offsetLeft && currentLetterIndex === 0) {
         scrollContentToCenterWord();
     }
     incrementMaxCursorIfNeeded(cursor);
     cursor++;
-
 }
 
 function incrementMaxCursorIfNeeded(cursor) {
@@ -226,9 +191,7 @@ function incrementMaxCursorIfNeeded(cursor) {
 }
 
 async function updateContentIfNeeded(keyDownEvent) {
-    console.log(
-        `${currentWordIndex % TOTAL_WORDS_ON_UPDATE === 0}, ${currentLetterIndex}, ${cursor}, ${maxCursor}`,
-    );
+    console.log(`${currentWordIndex % TOTAL_WORDS_ON_UPDATE === 0}, ${currentLetterIndex}, ${cursor}, ${maxCursor}`);
     if (
         currentWordIndex % TOTAL_WORDS_ON_UPDATE === 0 &&
         currentLetterIndex === 0 &&
@@ -291,8 +254,7 @@ function setCurrentIndexesToPreviousLetter() {
             currentLetterIndex = 0;
         } else {
             currentWordIndex--;
-            currentLetterIndex =
-                contentElement.children[currentWordIndex].children.length - 1;
+            currentLetterIndex = contentElement.children[currentWordIndex].children.length - 1;
         }
     }
 }

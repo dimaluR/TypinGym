@@ -1,32 +1,37 @@
 {
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/**",
+        "run": {
+          "serviceId": "typingym-api",
+          "region": "us-west1",
+          "pinTag": true
+        }
+      }
+    ]
+  },
+  "emulators": {
     "hosting": {
-        "public": "public",
-        "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-        "rewrites": [
-            {
-                "source": "/",
-                "destination": "/index.html"
-            },
-            {
-                "source": "/**",
-                "run": {
-                    "serviceId": "typingym-api",
-                    "region": "us-west1",
-                    "pinTag": true
-                }
-            }
-        ]
+      "port": 5002
     },
-    "emulators": {
-        "hosting": {
-            "port": 5002
-        },
-        "typingym-api": {
-            "port": 5007
-        },
-        "ui": {
-            "enabled": true
-        },
-        "singleProjectMode": true
-    }
+    "typingym-api": {
+      "port": 5007
+            
+    },
+    "ui": {
+      "enabled": true
+    },
+    "singleProjectMode": true
+  }
 }

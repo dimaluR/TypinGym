@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+        <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
         <link rel="stylesheet" href="./style.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,7 +15,7 @@
 
         <!-- update the version number as needed -->
         <script defer src="/__/firebase/10.10.0/firebase-app-compat.js"></script>
-        <!-- 
+        <!--
           initialize the SDK after all desired features are loaded, set useEmulator to false
           to avoid connecting the SDK to running emulators.
         -->
@@ -44,74 +44,36 @@
                     <span class="text"><b>Settings</b></span>
                     <div class="slidecontainer">
                         <span class="slider-text text">capitals</span>
-                        <input
-                            type="range"
-                            class="slider"
-                            id="capitalFreqSlider"
-                            min="0"
-                            max="10"
-                        />
-                        <span
-                            id="capitalFreqValue"
-                            class="slider-value text"
-                        ></span>
+                        <input type="range" class="slider" id="capitalFreqSlider" min="0" max="10" />
+                        <span id="capitalFreqValue" class="slider-value text"></span>
                     </div>
                     <div class="slidecontainer">
                         <span class="slider-text text">surrounds</span>
-                        <input
-                            type="range"
-                            class="slider"
-                            id="surroundFreqSlider"
-                            min="0"
-                            max="10"
-                        />
-                        <span
-                            id="surroundFreqValue"
-                            class="slider-value text"
-                        ></span>
+                        <input type="range" class="slider" id="surroundFreqSlider" min="0" max="10" />
+                        <span id="surroundFreqValue" class="slider-value text"></span>
                     </div>
                     <div class="slidecontainer">
                         <span class="slider-text text">punctuation</span>
-                        <input
-                            type="range"
-                            class="slider"
-                            id="punctuationFreqSlider"
-                            min="0"
-                            max="10"
-                        />
-                        <span
-                            id="punctuationFreqValue"
-                            class="slider-value text"
-                        ></span>
+                        <input type="range" class="slider" id="punctuationFreqSlider" min="0" max="10" />
+                        <span id="punctuationFreqValue" class="slider-value text"></span>
                     </div>
                     <div class="slidecontainer">
-                                            <span class="slider-text text">max word length</span>
-                                            <input
-                                                type="range"
-                                                class="slider"
-                                                id="maxWordLengthSlider"
-                                                min="1"
-                                                max="6"
-                                            />
-                                            <span
-                                                id="maxWordLengthValue"
-                                                class="slider-value text"
-                                            ></span>
-                                        </div>
+                        <span class="slider-text text">max word length</span>
+                        <input type="range" class="slider" id="maxWordLengthSlider" min="1" max="6" />
+                        <span id="maxWordLengthValue" class="slider-value text"></span>
+                    </div>
                     <div class="checkboxcontainer">
                         <input type="checkbox" id="force_retype_checkbox" name="stop_on_word" class="checkbox" />
                         <label for="force_retype" class="text">force retype</label>
                     </div>
                     <div class="checkboxcontainer">
                         <input type="checkbox" id="stop_on_word_checkbox" name="stop_on_word" class="checkbox" />
-                        <label for="stop_on_word" class="text"
-                            >stop on word</label
-                        >
+                        <label for="stop_on_word" class="text">stop on word</label>
                     </div>
                 </div>
                 <div id="spe"></div>
             </div>
         </div>
-        <script type="module" src="main.js"></script>
+        <script type="module" src="./main.js"></script>
     </body>
 </html>
