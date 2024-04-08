@@ -1,11 +1,14 @@
+import { initializeApp } from "firebase/app"
 import sendRequestToBackend from "./backend_gateway.js";
+import { authUser } from "./auth.js";
 const SPACER_CHAR = "\u00a0";
 const RETYPE_CHAR = "↰";
 const INITIAL_WORD_COUND = 16;
 const TOTAL_WORDS_ON_UPDATE = 8;
 const MODIFIER_KEYS = ["Control", "Alt", "Shift", "Meta", "Tab", "Escape"];
 const content = document.getElementById("content");
-
+const app = initializeApp()
+// authUser(app)
 // cursor keeps track of the furthest position reached.
 let cursor = 0;
 let maxCursor = 0;
@@ -21,9 +24,6 @@ let currentLetterIndex;
 // keep track of the word time start;
 let wordTimeStart = null;
 let letterTimeStart = null;
-let currentStats = {
-    wpm: 0,
-};
 
 let _config = {};
 
