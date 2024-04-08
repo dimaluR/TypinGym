@@ -1,33 +1,35 @@
 {
   "hosting": {
-    "public": "public",
+    "source": "hosting",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
+    "frameworksBackend": {
+      "region": "us-west1"
+    },
     "rewrites": [
-      {
-        "source": "/",
-        "destination": "/index.html"
-      },
-      {
-        "source": "/**",
-        "run": {
-          "serviceId": "typingym-api",
-          "region": "us-west1",
-          "pinTag": true
-        }
-      }
-    ]
+          {
+            "source": "/",
+            "destination": "/index.html"
+          },
+          {
+            "source": "/**",
+            "run": {
+              "serviceId": "typingym-api",
+              "region": "us-west1",
+              "pinTag": true
+            }
+          }
+        ]
   },
   "emulators": {
     "hosting": {
-      "port": 5002
+      "port": 5003
     },
     "typingym-api": {
       "port": 5007
-            
     },
     "ui": {
       "enabled": true
