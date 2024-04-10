@@ -1,6 +1,6 @@
-import { initializeApp } from "firebase/app"
+import { initializeApp } from "firebase/app";
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup } from "firebase/auth";
 import sendRequestToBackend from "./backend_gateway.js";
-import { authUser } from "./auth.js";
 const SPACER_CHAR = "\u00a0";
 const RETYPE_CHAR = "↰";
 const INITIAL_WORD_COUND = 16;
@@ -9,16 +9,32 @@ const MODIFIER_KEYS = ["Control", "Alt", "Shift", "Meta", "Tab", "Escape"];
 const content = document.getElementById("content");
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDJ8Kx6f_f6uHFwhTRLA3fGKG_QGjN4ESE",
-  authDomain: "typingym-85269.firebaseapp.com",
-  projectId: "typingym-85269",
-  storageBucket: "typingym-85269.appspot.com",
-  messagingSenderId: "417546758951",
-  appId: "1:417546758951:web:3f8a3251556dde83299702",
-  measurementId: "G-FNMEX2KZFC"
+    apiKey: "AIzaSyDJ8Kx6f_f6uHFwhTRLA3fGKG_QGjN4ESE",
+    authDomain: "typingym-85269.firebaseapp.com",
+    projectId: "typingym-85269",
+    storageBucket: "typingym-85269.appspot.com",
+    messagingSenderId: "417546758951",
+    appId: "1:417546758951:web:3f8a3251556dde83299702",
+    measurementId: "G-FNMEX2KZFC",
 };
-const app = initializeApp(firebaseConfig)
-authUser(app)
+
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+let currentUser = null;
+const provider = new GoogleAuthProvider();
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
+    }
+});
+if (!currentUser) {
+    signInWithPopup(auth, provider).catch((error) => {
+    const errorCode = error.code;
+        const errorMessage = error.message;
+        console.log(`user failed to log-in with error ${errorCode}: ${errorMessage}.`);
+    });
+}
 // cursor keeps track of the furthest position reached.
 let cursor = 0;
 let maxCursor = 0;
