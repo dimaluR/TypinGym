@@ -7,8 +7,18 @@ const INITIAL_WORD_COUND = 16;
 const TOTAL_WORDS_ON_UPDATE = 8;
 const MODIFIER_KEYS = ["Control", "Alt", "Shift", "Meta", "Tab", "Escape"];
 const content = document.getElementById("content");
-const app = initializeApp()
-// authUser(app)
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDJ8Kx6f_f6uHFwhTRLA3fGKG_QGjN4ESE",
+  authDomain: "typingym-85269.firebaseapp.com",
+  projectId: "typingym-85269",
+  storageBucket: "typingym-85269.appspot.com",
+  messagingSenderId: "417546758951",
+  appId: "1:417546758951:web:3f8a3251556dde83299702",
+  measurementId: "G-FNMEX2KZFC"
+};
+const app = initializeApp(firebaseConfig)
+authUser(app)
 // cursor keeps track of the furthest position reached.
 let cursor = 0;
 let maxCursor = 0;
