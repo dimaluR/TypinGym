@@ -21,20 +21,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
-let currentUser = null;
 const provider = new GoogleAuthProvider();
 onAuthStateChanged(auth, (user) => {
-    if (user) {
-        currentUser = user;
-    }
+    document.getElementById("user_display_name").innerText = user
+            ? user.displayName
+            : "Sign In";
 });
-if (!currentUser) {
+document.getElementById("user_display_name").onclick = (event) => {
     signInWithPopup(auth, provider).catch((error) => {
-    const errorCode = error.code;
+        const errorCode = error.code;
         const errorMessage = error.message;
         console.log(`user failed to log-in with error ${errorCode}: ${errorMessage}.`);
     });
-}
+};
 // cursor keeps track of the furthest position reached.
 let cursor = 0;
 let maxCursor = 0;
