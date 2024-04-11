@@ -19,15 +19,14 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-
+const signInButton = document.getElementById("sign_in_button");
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 onAuthStateChanged(auth, (user) => {
-    document.getElementById("user_display_name").innerText = user
-            ? user.displayName
-            : "Sign In";
+    signInButton.innerText = user ? user.displayName : "Sign In";
 });
-document.getElementById("user_display_name").onclick = (event) => {
+
+signInButton.onclick = (event) => {
     signInWithPopup(auth, provider).catch((error) => {
         const errorCode = error.code;
         const errorMessage = error.message;
