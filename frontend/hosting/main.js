@@ -10,7 +10,7 @@ const content = document.getElementById("content");
 
 const firebaseConfig = {
     apiKey: "AIzaSyDJ8Kx6f_f6uHFwhTRLA3fGKG_QGjN4ESE",
-    authDomain: "typingym-85269.firebaseapp.com",
+    authDomain: "typingym.com",
     projectId: "typingym-85269",
     storageBucket: "typingym-85269.appspot.com",
     messagingSenderId: "417546758951",
