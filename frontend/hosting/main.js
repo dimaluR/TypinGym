@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import sendRequestToBackend from "./backend_gateway.js";
 const SPACER_CHAR = "\u00a0";
 const RETYPE_CHAR = "↰";
@@ -19,11 +19,14 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const signInButton = document.getElementById("sign_in_button");
+const signInButton = document.getElementById("user_sign_in");
+const displayNameText = document.getElementById("user_display_name");
+const signOutButton = document.getElementById("sign_out_icon");
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
+const updateDisplayName = () => (displayNameText.innerText = auth.currentUser ? auth.currentUser.displayName : "Sign In");
 onAuthStateChanged(auth, (user) => {
-    signInButton.innerText = user ? user.displayName : "Sign In";
+    updateDisplayName();
 });
 
 signInButton.onclick = (event) => {
@@ -32,6 +35,10 @@ signInButton.onclick = (event) => {
         const errorMessage = error.message;
         console.log(`user failed to log-in with error ${errorCode}: ${errorMessage}.`);
     });
+};
+signOutButton.onclick = (event) => {
+    signOut(auth);
+    updateDisplayName();
 };
 // cursor keeps track of the furthest position reached.
 let cursor = 0;

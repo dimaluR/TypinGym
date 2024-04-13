@@ -123,6 +123,31 @@ a:hover {
 
 #spe {
     grid-area: spe;
+    display: grid;
+    grid-template-areas:
+        "site-settings"
+        "no-content";
+    grid-template-rows: 2rem auto;
+
+}
+
+#site-settings {
+    grid-area: site-settings;
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    grid-template-columns: auto repeat(3, 1rem);
+}
+
+#user_sign_in {
+    display:flex;
+    align-items:center;
+
+}
+.icon {
+    width: 0.8rem;
+    height: 0.8rem;
+    margin: 0.2rem;
 }
 
 .letter {
