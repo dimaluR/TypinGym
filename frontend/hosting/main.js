@@ -1,5 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
+import { getFirestore, collection, addDoc, doc, getDoc, connectFirestoreEmulator } from "firebase/firestore";
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import sendRequestToBackend from "./backend_gateway.js";
 const SPACER_CHAR = "\u00a0";
 const RETYPE_CHAR = "↰";
@@ -19,13 +21,32 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+if (location.port === "5002") {
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+}
+const appChecker = initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider("6LeGhLopAAAAAE_rEJEOifZRjMAsJN87WY_bh5sb"),
+    isTokenAuthRefreshEnabled: true,
+});
+const db = getFirestore(app);
+async function getDefaultConfig() {
+    try {
+        const docRef = doc(db, "/configurations/default");
+        const defaultConfig = await getDoc(docRef);
+        console.log(`${defaultConfig.id}`);
+    } catch (e) {
+        console.log(`could not retrieve doc...`);
+    }
+}
+getDefaultConfig();
 const signInButton = document.getElementById("user_sign_in");
 const displayNameText = document.getElementById("user_display_name");
 const signOutButton = document.getElementById("sign_out_icon");
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
-const updateDisplayName = () => (displayNameText.innerText = auth.currentUser ? auth.currentUser.displayName : "Sign In");
-onAuthStateChanged(auth, (user) => {
+const updateDisplayName = () =>
+    (displayNameText.innerText = auth.currentUser ? auth.currentUser.displayName : "Sign In");
+onAuthStateChanged(auth, async (user) => {
     updateDisplayName();
 });
 
