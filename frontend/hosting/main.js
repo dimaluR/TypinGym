@@ -20,9 +20,8 @@ const firebaseConfig = {
     measurementId: "G-FNMEX2KZFC",
 };
 
-const app = initializeApp(firebaseConfig);
+ app = initializeApp(firebaseConfig);
 if (import.meta.env.VITE_ENV === "dev") {
-    console.log(`enabled debug token in dev environment.`)
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 }
 const appChecker = initializeAppCheck(app, {
@@ -34,7 +33,12 @@ async function getDefaultConfig() {
     try {
         const docRef = doc(db, "/configurations/default");
         const defaultConfig = await getDoc(docRef);
-        console.log(`${defaultConfig.id}`);
+        if (defaultConfig.exists()) {
+            const config = defaultConfig.data();
+            console.log(`config:${JSON.stringify(config)}`);
+            updateConfigLocal(config)
+            updateSettingsPanel();
+        }
     } catch (e) {
         console.log(`could not retrieve doc...`);
     }
@@ -48,6 +52,7 @@ const updateDisplayName = () =>
     (displayNameText.innerText = auth.currentUser ? auth.currentUser.displayName : "Sign In");
 onAuthStateChanged(auth, async (user) => {
     updateDisplayName();
+    getDefaultConfig();
 });
 
 signInButton.onclick = (event) => {
@@ -79,9 +84,6 @@ let letterTimeStart = null;
 
 let _config = {};
 
-// main function
-main();
-
 // sliders
 const sp = document.getElementById("sp");
 const menu = document.getElementById("menu");
@@ -89,37 +91,46 @@ const menu = document.getElementById("menu");
 function initCheckboxInput(checkboxElementId, updateValue) {
     const checkboxElement = document.getElementById(checkboxElementId);
     checkboxElement.checked = _config[updateValue];
-    checkboxElement.oninput = async function () {
+    checkboxElement.oninput = async () => {
         console.log(`updating ${checkboxElementId} value with ${this.checked}`);
         _config[updateValue] = this.checked;
         await updateConfig();
-        await resetWordsInContent();
     };
     return checkboxElement;
 }
 function initSliderElement(sliderElementId, updateValue) {
     const sliderElement = document.getElementById(sliderElementId);
     sliderElement.value = _config[updateValue] > 0 ? 11 - _config[updateValue] : 0;
-    let lastSliderUpdateTime = Date.now();
     sliderElement.oninput = async (event) => {
         const configSliderValue = event.target.value > 0 ? 11 - event.target.value : 0;
         if (configSliderValue != _config[updateValue]) {
-            console.log(`upadating ${updateValue} with ${configSliderValue}, event target value ${event.target.value}`);
-            lastSliderUpdateTime = Date.now();
             _config[updateValue] = configSliderValue;
             await updateConfig();
-            await resetWordsInContent();
         }
     };
+    return sliderElement;
 }
 
 const forceRetypeCheckbox = initCheckboxInput("force_retype_checkbox", "force_retype");
 const stopOnWordCheckBox = initCheckboxInput("stop_on_word_checkbox", "stop_on_word");
-initSliderElement("capitalFreqSlider", "capitalize_freq");
-initSliderElement("surroundFreqSlider", "surround_freq");
-initSliderElement("punctuationFreqSlider", "punctuation_freq");
-initSliderElement("maxWordLengthSlider", "max_word_length");
-//
+const capitalSlider = initSliderElement("capitalFreqSlider", "capitalize_freq");
+const surroundSlider = initSliderElement("surroundFreqSlider", "surround_freq");
+const punctuationSlider = initSliderElement("punctuationFreqSlider", "punctuation_freq");
+const maxWordLengthSlider = initSliderElement("maxWordLengthSlider", "max_word_length");
+
+function updateSettingsPanel() {
+    console.log(`updating config: ${JSON.stringify(_config)}`);
+    forceRetypeCheckbox.checked = _config["force_retype"];
+    stopOnWordCheckBox.checked = _config["stop_on_word"];
+    capitalSlider.value = _config["capitalize_freq"];
+    surroundSlider.value = _config["surround_freq"];
+    punctuationSlider.value = _config["punctuation_freq"];
+    maxWordLengthSlider.value = _config["max_word_length"];
+}
+
+// main function
+main();
+
 content.onmouseover = function () {
     content.style.cursor = "none";
     sp.style.opacity = 0;
@@ -256,9 +267,6 @@ async function updateContentIfNeeded(keyDownEvent) {
 }
 function main() {
     content.focus();
-    const defaultConfig = getDefaultConfig();
-    updateConfigLocal(defaultConfig);
-
     resetWordsInContent();
     content.addEventListener("keydown", handleKeyDownEvent);
 }
