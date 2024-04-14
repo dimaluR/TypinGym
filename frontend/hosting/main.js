@@ -21,7 +21,8 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-if (location.port === "5002") {
+if (import.meta.env.VITE_ENV === "dev") {
+    console.log(`enabled debug token in dev environment.`)
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 }
 const appChecker = initializeAppCheck(app, {
@@ -38,7 +39,6 @@ async function getDefaultConfig() {
         console.log(`could not retrieve doc...`);
     }
 }
-getDefaultConfig();
 const signInButton = document.getElementById("user_sign_in");
 const displayNameText = document.getElementById("user_display_name");
 const signOutButton = document.getElementById("sign_out_icon");
@@ -256,7 +256,9 @@ async function updateContentIfNeeded(keyDownEvent) {
 }
 function main() {
     content.focus();
-    getConfig();
+    const defaultConfig = getDefaultConfig();
+    updateConfigLocal(defaultConfig);
+
     resetWordsInContent();
     content.addEventListener("keydown", handleKeyDownEvent);
 }
@@ -391,14 +393,16 @@ async function sendWordCompletedStatus(wordIndex) {
         console.error(`failed to send word completed update.`);
     }
 }
-
+function updateConfigLocal(config) {
+    for (const [key, value] of Object.entries(config)) {
+        _config[key] = value;
+    }
+}
 function getConfig() {
     const route = "config/";
     try {
         const config = sendRequestToBackend(route);
-        for (const [key, value] of Object.entries(config)) {
-            _config[key] = value;
-        }
+        updateConfigLocal(config);
     } catch (error) {
         console.error(`could not send updated configuration.`);
     }

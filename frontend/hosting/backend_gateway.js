@@ -1,7 +1,6 @@
 const BACKEND_HOST = "https://typingym-85269.web.app";
 const BACKEND_HOST_DEV = "https://127.0.0.1:5007";
-console.log(location);
-const backendUrl = location.port === "5002" ? BACKEND_HOST_DEV : BACKEND_HOST;
+const backendUrl = import.meta.env.VITE_ENV === "dev" ? BACKEND_HOST_DEV : BACKEND_HOST;
 
 export default async function sendRequestToBackend(route, method = "GET", data = null) {
     const requestOptions = {
