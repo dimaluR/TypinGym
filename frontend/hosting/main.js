@@ -20,7 +20,7 @@ const firebaseConfig = {
     measurementId: "G-FNMEX2KZFC",
 };
 
- app = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
 if (import.meta.env.VITE_ENV === "dev") {
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 }
