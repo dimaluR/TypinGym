@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
-import { getFirestore, collection, addDoc, doc, getDoc, connectFirestoreEmulator } from "firebase/firestore";
+import { getFirestore, collection, addDoc, doc, getDoc, connectFirestoreEmulator, setDoc } from "firebase/firestore";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import sendRequestToBackend from "./backend_gateway.js";
 const SPACER_CHAR = "\u00a0";
@@ -22,9 +22,10 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 if (import.meta.env.VITE_ENV === "dev") {
+    // allow auth withount app-check in development environment.
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 }
-const appChecker = initializeAppCheck(app, {
+initializeAppCheck(app, {
     provider: new ReCaptchaV3Provider("6LeGhLopAAAAAE_rEJEOifZRjMAsJN87WY_bh5sb"),
     isTokenAuthRefreshEnabled: true,
 });
@@ -36,11 +37,42 @@ async function getDefaultConfig() {
         if (defaultConfig.exists()) {
             const config = defaultConfig.data();
             console.log(`config:${JSON.stringify(config)}`);
-            updateConfigLocal(config)
+            updateConfigLocal(config);
             updateSettingsPanel();
+            return config;
         }
     } catch (e) {
         console.log(`could not retrieve doc...`);
+    }
+}
+async function updateUserConfig() {
+    console.log("updating user config...");
+    const userConfigDocRef = `/configurations/${auth.currentUser.uid}`;
+    try {
+        const docRef = doc(db, userConfigDocRef);
+        await setDoc(docRef, _config, { merge: true });
+    } catch (e) {
+        console.log(`could not update user config.. ${e}`);
+    }
+}
+
+async function getUserConfig() {
+    const userConfigDocRef = `/configurations/${auth.currentUser.uid}`;
+    let config = {};
+    try {
+        const docRef = doc(db, userConfigDocRef);
+        const userConfig = await getDoc(docRef);
+        if (userConfig.exists()) {
+            config = userConfig.data();
+            console.log(`retrieved user: ${auth.currentUser.displayName}\`s config ${JSON.stringify(config)}`);
+        } else {
+            console.log("doc does not exist.");
+            config = await getDefaultConfig();
+            await setDoc(docRef, config, { merge: true });
+        }
+        return config;
+    } catch (e) {
+        console.log(`could not retrive user config.. ${e}`);
     }
 }
 const signInButton = document.getElementById("user_sign_in");
@@ -51,20 +83,37 @@ const provider = new GoogleAuthProvider();
 const updateDisplayName = () =>
     (displayNameText.innerText = auth.currentUser ? auth.currentUser.displayName : "Sign In");
 onAuthStateChanged(auth, async (user) => {
-    updateDisplayName();
-    getDefaultConfig();
+   updateConfigurations(user);
+    content.focus();
+    resetWordsInContent();
 });
 
+async function updateConfigurations(user) {
+    let config;
+    updateDisplayName();
+    if (user) {
+        console.log(`user ${user.displayName} signed in wite uid ${user.uid}`);
+        config = await getUserConfig();
+    } else {
+        config = await getDefaultConfig();
+    }
+    console.log(`config ${JSON.stringify(config)}`);
+    updateConfigLocal(config);
+    updateSettingsPanel();
+}
+
 signInButton.onclick = (event) => {
-    signInWithPopup(auth, provider).catch((error) => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        console.log(`user failed to log-in with error ${errorCode}: ${errorMessage}.`);
-    });
+    console.log("attempting to sign in");
+    signInWithPopup(auth, provider)
+        .then((result) => {})
+        .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            console.log(`user failed to log-in with error ${errorCode}: ${errorMessage}.`);
+        });
 };
 signOutButton.onclick = (event) => {
     signOut(auth);
-    updateDisplayName();
 };
 // cursor keeps track of the furthest position reached.
 let cursor = 0;
@@ -91,21 +140,27 @@ const menu = document.getElementById("menu");
 function initCheckboxInput(checkboxElementId, updateValue) {
     const checkboxElement = document.getElementById(checkboxElementId);
     checkboxElement.checked = _config[updateValue];
-    checkboxElement.oninput = async () => {
+    checkboxElement.oninput = async function () {
         console.log(`updating ${checkboxElementId} value with ${this.checked}`);
         _config[updateValue] = this.checked;
-        await updateConfig();
+        await updateConfigLocal(_config);
+        await updateUserConfig();
+        content.focus();
+        resetWordsInContent();
     };
     return checkboxElement;
 }
 function initSliderElement(sliderElementId, updateValue) {
     const sliderElement = document.getElementById(sliderElementId);
-    sliderElement.value = _config[updateValue] > 0 ? 11 - _config[updateValue] : 0;
-    sliderElement.oninput = async (event) => {
-        const configSliderValue = event.target.value > 0 ? 11 - event.target.value : 0;
+    sliderElement.value = _config[updateValue];
+    sliderElement.oninput = async function () {
+        const configSliderValue = this.value;
         if (configSliderValue != _config[updateValue]) {
             _config[updateValue] = configSliderValue;
-            await updateConfig();
+            await updateConfigLocal(_config);
+            await updateUserConfig();
+            content.focus();
+            resetWordsInContent();
         }
     };
     return sliderElement;
@@ -113,18 +168,17 @@ function initSliderElement(sliderElementId, updateValue) {
 
 const forceRetypeCheckbox = initCheckboxInput("force_retype_checkbox", "force_retype");
 const stopOnWordCheckBox = initCheckboxInput("stop_on_word_checkbox", "stop_on_word");
-const capitalSlider = initSliderElement("capitalFreqSlider", "capitalize_freq");
-const surroundSlider = initSliderElement("surroundFreqSlider", "surround_freq");
-const punctuationSlider = initSliderElement("punctuationFreqSlider", "punctuation_freq");
+const capitalSlider = initSliderElement("capitalFreqSlider", "capitalize");
+const surroundSlider = initSliderElement("surroundFreqSlider", "surround");
+const punctuationSlider = initSliderElement("punctuationFreqSlider", "punctuation");
 const maxWordLengthSlider = initSliderElement("maxWordLengthSlider", "max_word_length");
 
 function updateSettingsPanel() {
-    console.log(`updating config: ${JSON.stringify(_config)}`);
     forceRetypeCheckbox.checked = _config["force_retype"];
     stopOnWordCheckBox.checked = _config["stop_on_word"];
-    capitalSlider.value = _config["capitalize_freq"];
-    surroundSlider.value = _config["surround_freq"];
-    punctuationSlider.value = _config["punctuation_freq"];
+    capitalSlider.value = _config["capitalize"];
+    surroundSlider.value = _config["surround"];
+    punctuationSlider.value = _config["punctuation"];
     maxWordLengthSlider.value = _config["max_word_length"];
 }
 
@@ -266,6 +320,7 @@ async function updateContentIfNeeded(keyDownEvent) {
     }
 }
 function main() {
+    updateConfigurations();
     content.focus();
     resetWordsInContent();
     content.addEventListener("keydown", handleKeyDownEvent);
@@ -276,6 +331,7 @@ async function resetWordsInContent() {
     currentWordIndex = 0;
     currentLetterIndex = 0;
 
+    console.log("reseting words...")
     await addWordsToContent(INITIAL_WORD_COUND);
 
     currentWord = content.firstElementChild;
@@ -363,7 +419,9 @@ async function addWordsToContent(wordCount) {
 }
 
 async function getNewWordsByCount(wordCount) {
-    const route = `words?n=${wordCount}`;
+    const user_id = auth.currentUser ? auth.currentUser.uid : "default";
+    const route = `words?n=${wordCount}&user_id=${user_id}`;
+    console.log(route)
     try {
         const words = await sendRequestToBackend(route);
         console.log(`added new words: [${words}].`);
@@ -401,27 +459,8 @@ async function sendWordCompletedStatus(wordIndex) {
         console.error(`failed to send word completed update.`);
     }
 }
-function updateConfigLocal(config) {
+async function updateConfigLocal(config) {
     for (const [key, value] of Object.entries(config)) {
-        _config[key] = value;
-    }
-}
-function getConfig() {
-    const route = "config/";
-    try {
-        const config = sendRequestToBackend(route);
-        updateConfigLocal(config);
-    } catch (error) {
-        console.error(`could not send updated configuration.`);
-    }
-}
-
-async function updateConfig() {
-    const route = "config/";
-    try {
-        await sendRequestToBackend(route, "POST", _config);
-        console.log("got the result");
-    } catch (error) {
-        console.error(`could not send updated configuration.`);
+        _config[key] = typeof value == "boolean" ? value : parseInt(value);
     }
 }

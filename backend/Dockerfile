@@ -1,5 +1,4 @@
-FROM python:3.11-alpine
-
+FROM python:3.11-slim-buster
 ENV PYTHONBUFFERED=True
 ENV UVICORN_HOST=0.0.0.0
 ENV UVICORN_PORT=5007

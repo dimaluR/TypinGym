@@ -1,17 +1,38 @@
 import logging
 import math
+import os
 import pathlib
 import random
-from collections import defaultdict
 import statistics
 import string
-from typing import Callable
-import uvicorn
-from fastapi import FastAPI
-from pydantic import BaseModel
-from fastapi.middleware.cors import CORSMiddleware
+from collections import defaultdict
 from queue import Queue
 from threading import Thread
+from typing import Callable
+
+import dotenv
+import firebase_admin
+import uvicorn
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from firebase_admin import credentials, firestore
+from pydantic import BaseModel
+
+logging.basicConfig(level=logging.INFO)
+
+basedir = pathlib.Path(__file__).parents[1]
+
+PATH_DOTENV_PROD = basedir / ".env.production"
+PATH_DOTENV_LOCAL = basedir / ".env.development.local"
+
+if PATH_DOTENV_LOCAL.exists():
+    logging.info("found local dotenv")
+    dotenv.load_dotenv(PATH_DOTENV_LOCAL)
+
+if PATH_DOTENV_PROD.exists():
+    logging.info("found prod dotenv")
+    dotenv.load_dotenv(PATH_DOTENV_PROD)
+
 
 _word_queue = Queue()
 
@@ -29,22 +50,39 @@ def handle_queued_words():
 word_processor = Thread(target=handle_queued_words)
 word_processor.start()
 
-basedir = pathlib.Path(__file__).parents[1]
-logging.basicConfig(level=logging.INFO)
+
+app = firebase_admin.initialize_app()
+db = firestore.client()
+
+
+def get_default_config():
+    default_config_doc_ref = db.collection("configurations").document("default")
+    default_config_snapshot = default_config_doc_ref.get()
+    return default_config_snapshot.to_dict()
+
+
+def setup_new_user_config(user_id: str):
+    doc_ref = db.collection("configurations").document(user_id)
+    default_config = get_default_config()
+    doc_ref.set(default_config)
+    return default_config
+
+
+def get_user_config(user_id: str) -> dict:
+    try:
+        doc_ref = db.collection("configurations").document(user_id)
+        user_config = doc_ref.get()
+        return user_config.to_dict() if user_config.exists else setup_new_user_config()
+    except Exception:
+        logging.exception(f"could not retrieve user {user_id} config")
+
+
 DICT_ENG_5K = basedir / "app/dict/english5k.txt"
 assert DICT_ENG_5K.exists()
 
 MAX_ALLOWED_LETTER_DURATION = 1 / (20 * 5.1 / 60000)  # equivalent to 20 WPM
 DURATION_MOVING_AVERAGE_NUM = 50
 
-_config = {
-    "capitalize_freq": 0,
-    "surround_freq": 0,
-    "punctuation_freq": 0,
-    "force_retype": False,
-    "stop_on_word": False,
-    "max_word_length": 6,
-}
 SURROUNDS = [("(", ")"), ("[", "]"), ("{", "}"), ("<", ">"), ("</", ">"), ('"', '"'), ("'", "'")]
 
 
@@ -174,14 +212,11 @@ def fill_words():
         clear_words()
         for _word in f.readlines():
             word = _word.strip("\n").lower()
-            if len(word) > _config["max_word_length"]:
-                continue
             _word_list.append(word)
             _words_by_lead[word[0]].append(word)
             _words_by_len[len(word)].append(word)
             for letter in _word:
                 _words_by_letter[letter].append(word)
-    logging.info(f"{_config=}")
 
 
 def get_random_word():
@@ -258,7 +293,8 @@ def apply_modifier(word: str, modifier: Callable, p: int):
 
 
 @app.get("/words")
-def get_words(n: int) -> list[str]:
+def get_words(n: int, user_id: str | None) -> list[str]:
+    _config = get_user_config(user_id) if user_id else get_default_config()
     m = n - 2
     max_error_words = 2
     words = get_missed_words(n_words=2, repeats=2)
@@ -269,28 +305,11 @@ def get_words(n: int) -> list[str]:
     words.extend(least_used_letter_words(least_used_letter_words_count))
     words.extend(random.sample(_word_list, n - len(words)))
     random.shuffle(words)
-    words = [apply_modifier(word, capitalize_word, _config["capitalize_freq"]) for word in words]
-    words = [apply_modifier(word, surround_word, _config["surround_freq"]) for word in words]
-    words = [apply_modifier(word, add_punctuation, _config["punctuation_freq"]) for word in words]
+    words = [apply_modifier(word, capitalize_word, _config["capitalize"]) for word in words]
+    words = [apply_modifier(word, surround_word, _config["surround"]) for word in words]
+    words = [apply_modifier(word, add_punctuation, _config["punctuation"]) for word in words]
     logging.info(f"{words=}")
     return words
-
-
-@app.get("/config")
-def get_config() -> dict:
-    return _config
-
-
-@app.post("/config")
-def post_config(data: dict[str, int]):
-    logging.info(f"recieved config update {data}")
-    for key, value in data.items():
-        logging.info(f"setting config: [{key}]: {value}")
-        _config.update({key: value})
-        match key:
-            case "max_word_length":
-                logging.info(f"getting new words on len <= {value}")
-                fill_words()
 
 
 @app.post("/word/incorrect")
