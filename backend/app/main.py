@@ -1,6 +1,5 @@
 import logging
 import math
-import os
 import pathlib
 import random
 import statistics
@@ -9,13 +8,13 @@ from collections import defaultdict
 from queue import Queue
 from threading import Thread
 from typing import Callable
-
+import itertools
 import dotenv
 import firebase_admin
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from firebase_admin import credentials, firestore
+from firebase_admin import firestore
 from pydantic import BaseModel
 
 logging.basicConfig(level=logging.INFO)
@@ -84,6 +83,7 @@ MAX_ALLOWED_LETTER_DURATION = 1 / (20 * 5.1 / 60000)  # equivalent to 20 WPM
 DURATION_MOVING_AVERAGE_NUM = 50
 
 SURROUNDS = [("(", ")"), ("[", "]"), ("{", "}"), ("<", ">"), ("</", ">"), ('"', '"'), ("'", "'")]
+SURROUNDS_LETTERS = itertools.chain.from_iterable(SURROUNDS)
 
 
 class WordData(BaseModel):
@@ -321,15 +321,17 @@ def update_wpm(word_count, duration_ms):
     global _wpm
     _wpm = word_count / (duration_ms / 60_000)  # FIX: Global use... blahhh
 
-
-def handle_completed_punctuation(letter: LetterData):
+def handle_surrounds_letter(letter: LetterData):
     for surrounds in _surrounds:
-        (open_bracket, close_bracket) = surrounds
-        if letter.letter in open_bracket or letter.letter in close_bracket:
+        if letter.letter in surrounds:
             _surrounds[surrounds]["hits"] += 1
             _surrounds[surrounds]["durations"].append(letter.duration)
             if letter.miss:
                 _surrounds[surrounds]["misses"] += 1
+
+def handle_completed_punctuation(letter: LetterData):
+    if letter in SURROUNDS_LETTERS:
+        handle_surrounds_letter(letter)
     _punctuations[letter.letter]["hits"] += 1
     _punctuations[letter.letter]["durations"].append(letter.duration)
     if letter.miss:
@@ -337,23 +339,26 @@ def handle_completed_punctuation(letter: LetterData):
 
 
 def map_special_keys_to_characters(letter: LetterData):
-    match letter.letter:
-        case "&amp;":
-            letter.letter = "&"
-        case "&lt;":
-            letter.letter = "<"
-        case "&gt;":
-            letter.letter = ">"
+    special_keys_mapping = {
+        "&amp;": "&",
+        "&lt;": "<",
+        "&gt;": ">",
+    }
+    letter.letter = special_keys_mapping.get(special_keys_mapping, letter.letter)
+
+
+def preprocess_letter(letter: LetterData):
+    map_special_keys_to_characters(letter)
 
 
 def handle_completed_word_data(data: CompletedWordData) -> None:
     update_wpm(data.word_count, data.duration)
     for letter in data.word_letters_data:
-        char = letter.letter
-        map_special_keys_to_characters(letter)
+        preprocess_letter(letter)
         if letter.letter in _punctuations:
             handle_completed_punctuation(letter)
             continue
+        char = letter.letter
         if char.isupper():
             char = letter.letter.lower()
         _letters[char].add_duration(letter.duration)
