@@ -1,46 +1,33 @@
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
-import { app } from "./firebase.js"
 import  * as auth from "./auth.js"
-
-const db = getFirestore(app);
+import  * as db from "./db.js"
 
 export async function getDefaultConfig() {
     try {
-        const docRef = doc(db, "/configurations/default");
-        const defaultConfig = await getDoc(docRef);
-        if (defaultConfig.exists()) {
-            return defaultConfig.data();
-        }
-        else {
-            cosole.error("could not find default configuration.")
-        }
+        return await db.getDocument("configurations", "default");
     } catch (e) {
-        console.log(`could not retrieve doc...`);
+        console.error(`could not retrieve default configuration`);
     }
 }
 
 export async function getUserConfig() {
-    const userConfigDocRef = `/configurations/${auth.getCurrentUserId()}`;
+    const userId = auth.getCurrentUserId();
+    let config = null;
     try {
-        const docRef = doc(db, userConfigDocRef);
-        const userConfig = await getDoc(docRef);
-        if (userConfig.exists()) {
-            return userConfig.data();
-        } else {
+        config = await db.getDocument("configurations", userId)
+        if (!userId || !config) {
             config = await getDefaultConfig();
-            await setDoc(docRef, config, { merge: true });
-            return config.data()
+            await db.setDocument("configurations", userId)
         }
+        return config
     } catch (e) {
         console.log(`could not retrive user config.. ${e}`);
     }
 }
 
 export async function updateUserConfig(config) {
-    const userConfigDocRef = `/configurations/${auth.getCurrentUserId()}`;
+    const userId = auth.getCurrentUserId();
     try {
-        const docRef = doc(db, userConfigDocRef);
-        await setDoc(docRef, config, { merge: true });
+        await db.setDocument("configurations", userId, config);
     } catch (e) {
         console.log(`could not update user config.. ${e}`);
     }
