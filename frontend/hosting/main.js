@@ -1,11 +1,13 @@
 import * as auth from "./js/auth.js";
 import * as user from "./js/user.js";
 import sendRequestToBackend from "./backend_gateway.js";
-const SPACER_CHAR = "\u00a0";
-const RETYPE_CHAR = "↰";
-const INITIAL_WORD_COUND = 8;
-const TOTAL_WORDS_ON_UPDATE = 4;
-const MODIFIER_KEYS = ["Control", "Alt", "Shift", "Meta", "Tab", "Escape"];
+import * as contentState from "./js/content.js"
+import {
+    MODIFIER_KEYS,
+    SPACER_CHAR,
+    RETYPE_CHAR,
+    TOTAL_WORDS_ON_UPDATE,
+} from "./js/content.js";
 const content = document.getElementById("content");
 
 const signInButton = document.getElementById("user_sign_in");
@@ -16,11 +18,18 @@ const updateDisplayName = () => (displayNameText.innerText = auth.getCurrentUser
 
 auth.listenForAuthChanged(async () => {
     updateDisplayName();
-    updateSiteConfig();
-    resetWordsInContent();
+    await updateSiteConfig();
+    await updateWordsInContent();
     content.focus();
 });
+async function updateWordsInContent() {
+    await contentState.resetWordsInContent();
+    currentWord = content.firstElementChild;
+    currentWord.classList.add("active");
 
+    currentLetter = currentWord.firstElementChild;
+    currentLetter.classList.add("active");
+}
 async function updateSiteConfig() {
     const config = auth.isUserSignedIn() ? await user.getUserConfig() : await user.getDefaultConfig();
     updateConfigLocal(config);
@@ -38,9 +47,6 @@ let maxWord = 0;
 // track the current active text elements
 let currentWord;
 let currentLetter;
-
-let currentWordIndex;
-let currentLetterIndex;
 
 // keep track of the word time start;
 let wordTimeStart = null;
@@ -60,7 +66,7 @@ function initCheckboxInput(checkboxElementId, updateValue) {
         console.log(`updating ${checkboxElementId} value with ${this.checked}`);
         updateConfigLocal({ [updateValue]: this.checked });
         await user.updateUserConfig(_config);
-        resetWordsInContent();
+        await updateWordsInContent();
         content.focus();
     };
     return checkboxElement;
@@ -73,7 +79,7 @@ function initSliderElement(sliderElementId, updateValue) {
     sliderElement.oninput = async function () {
         updateConfigLocal({ [updateValue]: this.value });
         await user.updateUserConfig(_config);
-        resetWordsInContent();
+        await updateWordsInContent();
         content.focus();
     };
     return sliderElement;
@@ -124,11 +130,11 @@ async function handleKeyDownEvent(event) {
         clearTypedClassesFromLetter(currentLetter);
         if (MODIFIER_KEYS.includes(event.key)) {
             if (event.key === "Escape") {
-                resetWordsInContent();
+                await updateWordsInContent();
             }
             console.log(`modifier key pressed: ${event.key}`);
         } else if (event.code === "Backspace") {
-            setCurrentIndexesToPreviousLetter();
+            contentState.setCurrentIndexesToPreviousLetter();
             updateActiveElements();
             letterTimeStart = Date.now();
 
@@ -151,7 +157,7 @@ async function handleKeyDownEvent(event) {
                 currentLetter.classList.add("correct");
             } else {
                 currentLetter.classList.add("incorrect", "miss");
-                if (forceRetypeCheckbox.checked && currentWordIndex == maxWord) {
+                if (forceRetypeCheckbox.checked && contentState.currentWordIndex == maxWord) {
                     currentWord.classList.add("miss");
                     currentWord.lastElementChild.textContent = RETYPE_CHAR;
                 }
@@ -159,7 +165,7 @@ async function handleKeyDownEvent(event) {
 
             await onLetterCompleted();
         }
-        console.log(`${event.key} (${event.code}), ${currentWordIndex}:${currentLetterIndex}, ${cursor}, ${maxCursor}`);
+        console.log(`${event.key} (${event.code}), ${contentState.currentWordIndex}:${contentState.currentLetterIndex}, ${cursor}, ${maxCursor}`);
 
         await updateContentIfNeeded(event);
     }
@@ -174,7 +180,7 @@ async function onLetterCompleted() {
     currentLetter.duration = Date.now() - letterTimeStart;
     letterTimeStart = Date.now();
     console.log(`current letter ${currentLetter.textContent} time start: ${letterTimeStart}`);
-    if (currentLetterIndex === 0) {
+    if (contentState.currentLetterIndex === 0) {
         wordTimeStart = Date.now();
     }
     if (stopOnWordCheckBox.checked && shouldStopOnWord(currentWord)) {
@@ -184,7 +190,7 @@ async function onLetterCompleted() {
         currentWord.classList.remove("incorrect-word");
         currentWord.lastChild.classList.remove("stop-on-word");
     }
-    if (currentLetterIndex === currentWord.children.length - 1 && cursor === maxCursor) {
+    if (contentState.currentLetterIndex === currentWord.children.length - 1 && cursor === maxCursor) {
         if (currentWord.classList.contains("incorrect-word")) {
             for (const letter of currentWord.children) {
                 if (letter.classList.contains("incorrect")) {
@@ -194,7 +200,7 @@ async function onLetterCompleted() {
             return;
         }
         if (currentWord.classList.contains("miss")) {
-            currentLetterIndex = 0;
+            contentState.currentLetterIndex = 0;
             cursor -= currentWord.children.length - 1;
             currentWord.classList.remove("miss");
             for (const letter of currentWord.children) {
@@ -204,12 +210,12 @@ async function onLetterCompleted() {
             updateActiveElements();
             return;
         } else {
-            sendWordCompletedStatus(currentWordIndex);
+            sendWordCompletedStatus(contentState.currentWordIndex);
         }
     }
-    setCurrentIndexesToNextLetter();
+    await contentState.setCurrentIndexesToNextLetter(currentWord.children.length)
     updateActiveElements();
-    if (currentWord.offsetLeft === content.offsetLeft && currentLetterIndex === 0) {
+    if (currentWord.offsetLeft === content.offsetLeft && contentState.currentLetterIndex === 0) {
         scrollContentToCenterWord();
     }
     incrementMaxCursorIfNeeded(cursor);
@@ -218,38 +224,25 @@ async function onLetterCompleted() {
 
 function incrementMaxCursorIfNeeded(cursor) {
     maxCursor = cursor === maxCursor ? maxCursor + 1 : maxCursor;
-    maxWord = Math.max(maxWord, currentWordIndex);
+    maxWord = Math.max(maxWord, contentState.currentWordIndex);
 }
 
 async function updateContentIfNeeded(keyDownEvent) {
     if (
-        currentWordIndex % TOTAL_WORDS_ON_UPDATE === 0 &&
-        currentLetterIndex === 0 &&
+        contentState.currentWordIndex % TOTAL_WORDS_ON_UPDATE === 0 &&
+        contentState.currentLetterIndex === 0 &&
         keyDownEvent.key !== "Backspace" &&
-        cursor === maxCursor
+        cursor === maxCursor &&
+        cursor !== 0
     ) {
-        await addWordsToContent(TOTAL_WORDS_ON_UPDATE);
+        await contentState.addWordsToContent(TOTAL_WORDS_ON_UPDATE);
     }
 }
-function main() {
-    updateSiteConfig();
-    resetWordsInContent();
+async function main() {
+    await updateSiteConfig();
+    await updateWordsInContent();
     content.focus();
     content.addEventListener("keydown", handleKeyDownEvent);
-}
-
-async function resetWordsInContent() {
-    content.innerHTML = "";
-    currentWordIndex = 0;
-    currentLetterIndex = 0;
-
-    await addWordsToContent(INITIAL_WORD_COUND);
-
-    currentWord = content.firstElementChild;
-    currentWord.classList.add("active");
-
-    currentLetter = currentWord.firstElementChild;
-    currentLetter.classList.add("active");
 }
 
 function updateActiveElements() {
@@ -258,88 +251,20 @@ function updateActiveElements() {
     currentWord.classList.remove("active");
 
     // update current text elements based on calculated index.
-    currentWord = content.children[currentWordIndex];
-    currentLetter = currentWord.children[currentLetterIndex];
+    currentWord = content.children[contentState.currentWordIndex];
+    currentLetter = currentWord.children[contentState.currentLetterIndex];
 
     // add active statur to new current text elements.
     currentLetter.classList.add("active");
     currentWord.classList.add("active");
 }
 
-async function setCurrentIndexesToNextLetter() {
-    currentLetterIndex++;
-    if (currentLetterIndex >= currentWord.children.length) {
-        currentLetterIndex = 0;
-        currentWordIndex++;
-    }
-}
-
-function setCurrentIndexesToPreviousLetter() {
-    const contentElement = document.getElementById("content");
-    currentLetterIndex--;
-    if (currentLetterIndex < 0) {
-        if (currentWordIndex === 0) {
-            currentWordIndex = 0;
-            currentLetterIndex = 0;
-        } else {
-            currentWordIndex--;
-            currentLetterIndex = contentElement.children[currentWordIndex].children.length - 1;
-        }
-    }
-}
 
 function scrollContentToCenterWord() {
     currentWord.scrollIntoView({
         behavior: "smooth",
         block: "center",
     });
-}
-
-function createLetterElement(letter) {
-    const letterElement = document.createElement("letter");
-    letterElement.className = "letter";
-    letterElement.textContent = letter;
-    letterElement.duration = 1;
-    return letterElement;
-}
-
-async function createWordElement(word) {
-    const wordElement = document.createElement("div");
-    wordElement.className = "word";
-    wordElement.word = word;
-    for (const letter of word) {
-        const letterElement = createLetterElement(letter);
-        wordElement.appendChild(letterElement);
-    }
-    wordElement.appendChild(createLetterElement(SPACER_CHAR));
-    return wordElement;
-}
-
-async function addWordsToContent(wordCount) {
-    const contentElement = document.getElementById("content");
-    let words;
-    try {
-        words = await getNewWordsByCount(wordCount);
-    } catch (error) {
-        console.error(`error fetching words: ${error}`);
-    }
-    for (const word of words) {
-        const wordElement = await createWordElement(word);
-        contentElement.appendChild(wordElement);
-    }
-}
-
-async function getNewWordsByCount(wordCount) {
-    const user_id = auth.isUserSignedIn() ? auth.getCurrentUserId() : "default";
-    const route = `words?n=${wordCount}&user_id=${user_id}`;
-    console.log(route);
-    try {
-        const words = await sendRequestToBackend(route);
-        console.log(`added new words: [${words}].`);
-        return words;
-    } catch (error) {
-        console.error(`${error}`);
-    }
 }
 
 async function sendWordCompletedStatus(wordIndex) {

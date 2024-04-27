@@ -1,5 +1,4 @@
 import { initializeApp } from "firebase/app";
-import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDJ8Kx6f_f6uHFwhTRLA3fGKG_QGjN4ESE",
@@ -13,12 +12,4 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 
-if (import.meta.env.VITE_ENV === "dev") {
-    // allow auth withount app-check in development environment.
-    self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-}
-initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider("6LeGhLopAAAAAE_rEJEOifZRjMAsJN87WY_bh5sb"),
-    isTokenAuthRefreshEnabled: true,
-});
 

@@ -21,5 +21,4 @@ export async function setDocument(collection, document, data) {
         await setDoc(docRef, data, {merge: true});
     } catch (e) {}
     return data;
-    
 }
