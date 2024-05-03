@@ -1,10 +1,9 @@
 import logging
 import random
-import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app import db, basedir, word_processor
+from app import db, word_processor
 from app.models import CompletedWordData
 
 app = FastAPI()
@@ -56,9 +55,3 @@ def post_completed_word_data(data: CompletedWordData) -> None:
 @app.get("/stats/letters")
 def get_stats_letters() -> list[dict]:
     return [letter.as_dict() for letter in db.symbols._letters.values()]
-
-
-if __name__ == "__main__":
-    ssl_path = basedir / ".ssl"
-    assert ssl_path.exists()
-    uvicorn.run(app="api:app", port=5007, ssl_keyfile=ssl_path / "key.pem", ssl_certfile=ssl_path / "cert.pem")

@@ -46,9 +46,9 @@ def preprocess_letter(letter: LetterData):
 def handle_queued_words():
     while True:
         word_data = _word_queue.get()
-        logging.info("got a word")
         handle_completed_word_data(word_data)
         _word_queue.task_done()
+
 
 def handle_completed_word_data(data: CompletedWordData) -> None:
     for letter in data.word_letters_data:  # first letter should be treated a bit differently...
@@ -60,7 +60,6 @@ def handle_completed_word_data(data: CompletedWordData) -> None:
         handle_letter_group(letter, db.symbols._letters, char, db.symbols.LETTER_PENALTY)
 
 
-def run():
-    word_processor = Thread(target=handle_queued_words)
-    word_processor.start()
-
+t = Thread(target=handle_queued_words, daemon=True)
+logging.info("starting word processos thread...")
+t.start()
