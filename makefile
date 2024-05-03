@@ -14,3 +14,4 @@ run-frontend:
 
 run:
 	@make run-backend & make run-frontend
+

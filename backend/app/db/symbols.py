@@ -47,6 +47,24 @@ def apply_modifier(word: str, modifier: Callable, p: int):
     return modifier(word) if random.random() < 1 / p else word
 
 
-_letters = {char: SymbolStats() for char in string.ascii_lowercase}
-_punctuations = {p: SymbolStats() for p in string.punctuation}
-_surrounds = {s: SymbolStats() for s in SURROUNDS}
+_letters, _punctuations, _surrounds = {}, {}, {}
+
+def init_letters_store():
+    global _letters
+    _letters = {char: SymbolStats() for char in string.ascii_lowercase}
+
+
+def init_punctuations_store():
+    global _punctuations
+    _punctuations = {p: SymbolStats() for p in string.punctuation}
+
+
+def init_surrounds_store():
+    global _surrounds
+    _surrounds = {s: SymbolStats() for s in SURROUNDS}
+
+
+def reset_symbol_stores():
+    init_letters_store()
+    init_punctuations_store()
+    init_surrounds_store()
