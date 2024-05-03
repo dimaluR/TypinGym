@@ -65,7 +65,6 @@ export async function resetWordsInContent() {
 async function getNewWordsByCount(wordCount) {
     const user_id = auth.isUserSignedIn() ? auth.getCurrentUserId() : "default";
     const route = `words?n=${wordCount}&user_id=${user_id}`;
-    console.log(route);
     try {
         const words = await sendRequestToBackend(route);
         console.log(`added new words: [${words}].`);
@@ -79,6 +78,7 @@ export async function addWordsToContent(wordCount) {
     let words;
     try {
         words = await getNewWordsByCount(wordCount);
+        console.log(`words added: ${words}`)
     } catch (error) {
         console.error(`error fetching words: ${error}`);
     }

@@ -164,10 +164,10 @@ async function handleKeyDownEvent(event) {
             }
 
             await onLetterCompleted();
+            await updateContentIfNeeded(event);
         }
         console.log(`${event.key} (${event.code}), ${contentState.currentWordIndex}:${contentState.currentLetterIndex}, ${cursor}, ${maxCursor}`);
 
-        await updateContentIfNeeded(event);
     }
 }
 const shouldStopOnWord = (wordElement) => {
@@ -218,11 +218,11 @@ async function onLetterCompleted() {
     if (currentWord.offsetLeft === content.offsetLeft && contentState.currentLetterIndex === 0) {
         scrollContentToCenterWord();
     }
-    incrementMaxCursorIfNeeded(cursor);
+    incrementMaxCursorIfNeeded();
     cursor++;
 }
 
-function incrementMaxCursorIfNeeded(cursor) {
+function incrementMaxCursorIfNeeded() {
     maxCursor = cursor === maxCursor ? maxCursor + 1 : maxCursor;
     maxWord = Math.max(maxWord, contentState.currentWordIndex);
 }
@@ -236,6 +236,7 @@ async function updateContentIfNeeded(keyDownEvent) {
         cursor !== 0
     ) {
         await contentState.addWordsToContent(TOTAL_WORDS_ON_UPDATE);
+        console.log("adding words to content")
     }
 }
 async function main() {

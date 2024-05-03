@@ -5,6 +5,7 @@ console.log(`vite backend env: ${ import.meta.env.VITE_BACKEND_ENV }`)
 console.log(`vite env: ${ import.meta.env.VITE_ENV }`)
 
 export default async function sendRequestToBackend(route, method = "GET", data = null) {
+    console.log(`sending request to backend API: ${route}`)
     const requestOptions = {
         method: method,
     };
