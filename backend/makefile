@@ -11,7 +11,7 @@ deploy:
 	gcloud run deploy $(SERVICE_NAME) --image gcr.io/$(PROJECT_ID)/backend --port=$(BACKEND_PORT)
 
 run:
-	uvicorn app.main:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) --reload --ssl-keyfile $(SSL_KEY) --ssl-certfile $(SSL_CERT)
+	uvicorn app.api:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) --reload --ssl-keyfile $(SSL_KEY) --ssl-certfile $(SSL_CERT)
 
 dev-build:
 	docker build -t typingym-api .
