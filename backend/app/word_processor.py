@@ -1,3 +1,4 @@
+import logging
 from threading import Thread
 from queue import Queue
 from typing import Hashable, Iterable
@@ -45,6 +46,7 @@ def preprocess_letter(letter: LetterData):
 def handle_queued_words():
     while True:
         word_data = _word_queue.get()
+        logging.info("got a word")
         handle_completed_word_data(word_data)
         _word_queue.task_done()
 
@@ -58,4 +60,7 @@ def handle_completed_word_data(data: CompletedWordData) -> None:
         handle_letter_group(letter, db.symbols._letters, char, db.symbols.LETTER_PENALTY)
 
 
-word_processor = Thread(target=handle_queued_words)
+def run():
+    word_processor = Thread(target=handle_queued_words)
+    word_processor.start()
+

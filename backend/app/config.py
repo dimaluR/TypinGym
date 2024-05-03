@@ -1,13 +1,10 @@
 import logging
 import dotenv
 from app import basedir
-from backend.app import word_processor
 
 PATH_DOTENV_PROD = basedir / ".env.production"
 PATH_DOTENV_LOCAL = basedir / ".env.development.local"
-
 logging.basicConfig(level=logging.INFO)
-
 
 def setup_environment():
     if PATH_DOTENV_LOCAL.exists():
